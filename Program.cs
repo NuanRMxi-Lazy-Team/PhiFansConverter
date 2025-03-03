@@ -1,11 +1,11 @@
 ﻿using Newtonsoft.Json;
 using PhiFansConverter;
 
-// 要求选取一个文件
 const float precision = 1f / 8f;
+const float speedRatio = 8f;
 hey:
 Console.WriteLine("请选择一个文件：");
-string path = Console.ReadLine();
+string? path = Console.ReadLine();
 if (!File.Exists(path))
 {
     Console.WriteLine("文件不存在！");
@@ -19,48 +19,31 @@ Console.WriteLine("What type of file is this? (1. PhiFans 2. RPE)");
 int type = int.Parse(Console.ReadLine());
 if (type == 1)
 {
-    // 读取文件
     string json = File.ReadAllText(path);
-    // 序列化为 PhiFansChart 对象
     PhiFansChart chart = JsonConvert.DeserializeObject<PhiFansChart>(json);
-    // 转换为 RPEChart 对象
     RpeChart rpeChart = PhiFansConverter(chart);
-    // 保存在rpe.json
     File.WriteAllText("rpe.json", JsonConvert.SerializeObject(rpeChart, Formatting.Indented));
-    // 打印完整文件路径
     Console.WriteLine("已保存在" + Path.GetFullPath("rpe.json"));
-    // English
     Console.WriteLine("Saved to " + Path.GetFullPath("rpe.json"));
-    // 按回车键退出
     Console.WriteLine("按回车键退出");
-    // English
     Console.WriteLine("Press Enter to exit");
     Console.ReadLine();
 }
 else if (type == 2)
 {
-    // 读取文件
     string json = File.ReadAllText(path);
-    // 序列化为 RpeChart 对象
     RpeChart chart = JsonConvert.DeserializeObject<RpeChart>(json);
-    // 转换为 PhiFansChart 对象
     PhiFansChart phiFansChart = RePhiEditConverter(chart);
-    // 保存在phifans.json
     File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.Indented));
-    // 打印完整文件路径
     Console.WriteLine("已保存在" + Path.GetFullPath("phifans.json"));
-    // English
     Console.WriteLine("Saved to " + Path.GetFullPath("phifans.json"));
-    // 按回车键退出
     Console.WriteLine("按回车键退出");
-    // English
     Console.WriteLine("Press Enter to exit");
     Console.ReadLine();
 }
 else
 {
     Console.WriteLine("未知的类型！");
-    // English
     Console.WriteLine("Unknown type!");
     goto hey;
 }
@@ -127,15 +110,15 @@ RpeChart PhiFansConverter(PhiFansChart chart)
                 eventItem.StartTime = IntArrayToBeat(lineItem.props.speed[i - 1].beat);
                 eventItem.EndTime = IntArrayToBeat(item.beat);
                 eventItem.Start = lineItem.props.speed[i - 1].value * 8;
-                eventItem.End = item.value * 8;
+                eventItem.End = item.value * speedRatio;
                 eventItem.EasingType = 1;
             }
             else
             {
                 eventItem.StartTime = IntArrayToBeat(item.beat);
                 eventItem.EndTime = IntArrayToBeat(item.beat);
-                eventItem.Start = item.value * 8;
-                eventItem.End = item.value * 8;
+                eventItem.Start = item.value * speedRatio;
+                eventItem.End = item.value * speedRatio;
                 eventItem.EasingType = 1;
             }
 
@@ -267,7 +250,9 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
             bpm = bpm.Bpm
         });
     }
+
     // 提前删除所有判定线的空事件层
+    // Delete all empty event layers in advance
     chart.JudgeLineList.ForEach(judgeline => judgeline.EventLayers.RemoveAll(layer => layer is null));
     foreach (var judgeline in chart.JudgeLineList)
     {
@@ -305,16 +290,17 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
 
             lineItem.notes.Add(phiNote);
         }
-        
+
         if (judgeline.EventLayers.Count > 1 || judgeline.Father != -1)
         {
             Console.WriteLine("天哪！！！多层事件或父子线！！！这将需要很长的处理时间！");
             // English
-            Console.WriteLine("Oh my god!!! Multi-layer events or parent-child lines!!! This will take a long time to process!");
+            Console.WriteLine(
+                "Oh my god!!! Multi-layer events or parent-child lines!!! This will take a long time to process!");
             // 求所有事件层级中，最后一个事件的结束时间
+            // Get the end time of the last event in all event layers
             float maxBeat = judgeline.EventLayers.LastEventEndBeat();
-            
-            
+
             // 逐拍遍历
             for (float beat = 0; beat < maxBeat; beat += precision)
             {
@@ -329,7 +315,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     };
                     lineItem.props.alpha.Add(phiEventFrame);
                 }
-                
+
                 // Rotate
                 if (judgeline.EventLayers.HasAngleEventAtBeat(beat))
                 {
@@ -342,7 +328,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     };
                     lineItem.props.rotate.Add(phiEventFrame);
                 }
-                
+
                 // X & Y
                 var lineIndex = chart.JudgeLineList.IndexOf(judgeline);
                 var hasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat);
@@ -350,8 +336,10 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                 if (hasEvent)
                 {
                     // 获取这个判定线在判定线列表的索引
+                    // Get the index of this judge line in the judge line list
 
                     // 调用GetLinePosition方法获取判定线的位置，返回x, y
+                    // Call the GetLinePosition method to get the position of the judge line, returning x, y
                     var position = chart.JudgeLineList.GetLinePosition(lineIndex, beat);
                     // X
                     var phiEventFrameX = new PhiFansObject.EventItem
@@ -361,6 +349,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                         continuous = lastHasEvent,
                         easing = 0
                     };
+                    // Y
                     var phiEventFrameY = new PhiFansObject.EventItem
                     {
                         beat = BeatConverter.BeatToBeatArray(beat),
@@ -370,9 +359,9 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     };
                     lineItem.props.positionX.Add(phiEventFrameX);
                     lineItem.props.positionY.Add(phiEventFrameY);
-
                 }
             }
+
             // Speed
             foreach (var eventItem in judgeline.EventLayers[0].SpeedEvents)
             {
@@ -381,31 +370,32 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     var phiEventFrame = new PhiFansObject.EventItem
                     {
                         beat = eventItem.StartTime.Array,
-                        value = eventItem.Start / 8f,
+                        value = eventItem.Start / speedRatio,
                         continuous = false,
                         easing = 0
                     };
                     lineItem.props.speed.Add(phiEventFrame);
                     continue;
                 }
+
                 var phiEventStart = new PhiFansObject.EventItem
                 {
                     beat = eventItem.StartTime.Array,
-                    value = eventItem.Start / 8f,
+                    value = eventItem.Start / speedRatio,
                     continuous = false,
                     easing = 0
                 };
                 var phiEventEnd = new PhiFansObject.EventItem
                 {
                     beat = eventItem.EndTime.Array,
-                    value = eventItem.End / 8f,
+                    value = eventItem.End / speedRatio,
                     continuous = true,
                     easing = 0
                 };
                 lineItem.props.speed.Add(phiEventStart);
                 lineItem.props.speed.Add(phiEventEnd);
             }
-            //Console.WriteLine("这次做了！");
+
             phiFansChart.lines.Add(lineItem);
             continue;
         }
@@ -426,6 +416,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     lineItem.props.alpha.Add(phiEventFrame);
                     continue;
                 }
+
                 var phiEventStart = new PhiFansObject.EventItem
                 {
                     beat = eventItem.StartTime.Array,
@@ -458,6 +449,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     lineItem.props.positionX.Add(phiEventFrame);
                     continue;
                 }
+
                 var phiEventStart = new PhiFansObject.EventItem
                 {
                     beat = eventItem.StartTime.Array,
@@ -490,6 +482,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     lineItem.props.positionY.Add(phiEventFrame);
                     continue;
                 }
+
                 var phiEventStart = new PhiFansObject.EventItem
                 {
                     beat = eventItem.StartTime.Array,
@@ -548,24 +541,25 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
                     var phiEventFrame = new PhiFansObject.EventItem
                     {
                         beat = eventItem.StartTime.Array,
-                        value = eventItem.Start / 8f,
+                        value = eventItem.Start / speedRatio,
                         continuous = false,
                         easing = 0
                     };
                     lineItem.props.speed.Add(phiEventFrame);
                     continue;
                 }
+
                 var phiEventStart = new PhiFansObject.EventItem
                 {
                     beat = eventItem.StartTime.Array,
-                    value = eventItem.Start / 8f,
+                    value = eventItem.Start / speedRatio,
                     continuous = false,
                     easing = 0
                 };
                 var phiEventEnd = new PhiFansObject.EventItem
                 {
                     beat = eventItem.EndTime.Array,
-                    value = eventItem.End / 8f,
+                    value = eventItem.End / speedRatio,
                     continuous = true,
                     easing = 0
                 };
@@ -580,7 +574,7 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
     return phiFansChart;
 }
 
-#region 坐标系转换
+#region 坐标系转换 | Coordinate system conversion
 
 // X坐标转换
 float PhiFansTransformX(float x)
@@ -616,7 +610,7 @@ float RePhiEditTransformY(float y)
 
 #endregion
 
-#region 缓动编号转换
+#region 缓动编号转换 | Easing number conversion
 
 int RePhiEditEasing(int pfEasing)
 {
@@ -657,6 +651,7 @@ int RePhiEditEasing(int pfEasing)
     };
     return result;
 }
+
 int PhiFansEasing(int rpeEasing)
 {
     // 返回PhiFans的缓动编号，输入RPE的缓动编号，也就是左侧的编号转换为右侧的编号
@@ -695,6 +690,5 @@ int PhiFansEasing(int rpeEasing)
     };
     return result;
 }
-
 
 #endregion

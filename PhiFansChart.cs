@@ -46,8 +46,8 @@ public static class PhiFansObject
     {
         public int type = 1;
         public int[] beat = new int[3];
-        public int positionX = 0;
-        public float speed = 0;
+        public int positionX;
+        public float speed;
         public bool isAbove = true;
         public int[] holdEndBeat = new int[3];
     }
