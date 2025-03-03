@@ -50,7 +50,7 @@ else if (type == 2)
     // 打印完整文件路径
     Console.WriteLine("已保存在" + Path.GetFullPath("phifans.json"));
     // English
-    Console.WriteLine("Saved to " + Path.GetFullPath("rpe.json"));
+    Console.WriteLine("Saved to " + Path.GetFullPath("phifans.json"));
     // 按回车键退出
     Console.WriteLine("按回车键退出");
     // English
