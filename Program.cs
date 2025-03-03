@@ -14,6 +14,8 @@ if (!File.Exists(path))
 
 // 询问这是什么类型的文件
 Console.WriteLine("这是什么类型的文件？（1. PhiFans 2. RPE）");
+// English
+Console.WriteLine("What type of file is this? (1. PhiFans 2. RPE)");
 int type = int.Parse(Console.ReadLine());
 if (type == 1)
 {
@@ -27,8 +29,12 @@ if (type == 1)
     File.WriteAllText("rpe.json", JsonConvert.SerializeObject(rpeChart, Formatting.Indented));
     // 打印完整文件路径
     Console.WriteLine("已保存在" + Path.GetFullPath("rpe.json"));
+    // English
+    Console.WriteLine("Saved to " + Path.GetFullPath("rpe.json"));
     // 按回车键退出
     Console.WriteLine("按回车键退出");
+    // English
+    Console.WriteLine("Press Enter to exit");
     Console.ReadLine();
 }
 else if (type == 2)
@@ -43,13 +49,19 @@ else if (type == 2)
     File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.Indented));
     // 打印完整文件路径
     Console.WriteLine("已保存在" + Path.GetFullPath("phifans.json"));
+    // English
+    Console.WriteLine("Saved to " + Path.GetFullPath("rpe.json"));
     // 按回车键退出
     Console.WriteLine("按回车键退出");
+    // English
+    Console.WriteLine("Press Enter to exit");
     Console.ReadLine();
 }
 else
 {
     Console.WriteLine("未知的类型！");
+    // English
+    Console.WriteLine("Unknown type!");
     goto hey;
 }
 
@@ -262,6 +274,8 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
         if (judgeline.Texture != "line.png")
         {
             Console.WriteLine("检测到了不支持的判定线纹理：" + judgeline.Texture);
+            // English
+            Console.WriteLine("Detected unsupported judge line texture: " + judgeline.Texture);
         }
 
         var lineItem = new PhiFansObject.LineItem();
@@ -285,6 +299,8 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
             if (note.IsFake != 0)
             {
                 Console.WriteLine("检查到了不支持的Fake属性：" + note.IsFake);
+                // English
+                Console.WriteLine("Detected unsupported Fake attribute: " + note.IsFake);
             }
 
             lineItem.notes.Add(phiNote);
@@ -293,6 +309,8 @@ PhiFansChart RePhiEditConverter(RpeChart chart)
         if (judgeline.EventLayers.Count > 1 || judgeline.Father != -1)
         {
             Console.WriteLine("天哪！！！多层事件或父子线！！！这将需要很长的处理时间！");
+            // English
+            Console.WriteLine("Oh my god!!! Multi-layer events or parent-child lines!!! This will take a long time to process!");
             // 求所有事件层级中，最后一个事件的结束时间
             float maxBeat = judgeline.EventLayers.LastEventEndBeat();
             
