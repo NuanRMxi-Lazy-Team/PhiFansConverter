@@ -59,25 +59,19 @@ public static class Converters
             judgeLine.EventLayers = [new EventLayer()];
             for (var i = 0; i < lineItem.props.speed.Count; i++)
             {
-                SpeedEvent eventItem = new();
                 var item = lineItem.props.speed[i];
-                if (lineItem.props.speed[i].continuous)
+                var value = PhiFans.TransformX(item.value);
+                var start = item.continuous ? lineItem.props.positionY[i - 1].value : value;
+                SpeedEvent eventItem = new()
                 {
-                    eventItem.StartTime = IntArrayToBeat(lineItem.props.speed[i - 1].beat);
-                    eventItem.EndTime = IntArrayToBeat(item.beat);
-                    eventItem.Start = lineItem.props.speed[i - 1].value * 8;
-                    eventItem.End = item.value * SpeedRatio;
-                    eventItem.EasingType = 1;
-                }
-                else
-                {
-                    eventItem.StartTime = IntArrayToBeat(item.beat);
-                    eventItem.EndTime = IntArrayToBeat(item.beat);
-                    eventItem.Start = item.value * SpeedRatio;
-                    eventItem.End = item.value * SpeedRatio;
-                    eventItem.EasingType = 1;
-                }
-
+                    StartTime = item.continuous
+                        ? IntArrayToBeat(lineItem.props.positionX[i - 1].beat)
+                        : IntArrayToBeat(item.beat),
+                    EndTime = IntArrayToBeat(item.beat),
+                    Start = start * SpeedRatio,
+                    End = item.value * SpeedRatio,
+                    EasingType = 1
+                };
                 judgeLine.EventLayers[0].SpeedEvents.Add(eventItem);
             }
 
@@ -92,7 +86,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.positionX[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = value,
+                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : value,
                     End = value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
@@ -110,7 +104,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.positionY[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = value,
+                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : value,
                     End = value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
@@ -127,7 +121,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.alpha[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = item.value,
+                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : item.value,
                     End = item.value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
@@ -145,13 +139,37 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.rotate[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = item.value,
+                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : item.value,
                     End = item.value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
 
                 judgeLine.EventLayers[0].RotateEvents.Add(eventItem);
             }
+            // 检查每种事件的前两个事件开始数值是否相同，如果相同，删除第一个
+            // Check if the first two events of each event type have the same start value, if so, delete the first one
+            void CleanupRedundantEvents<T>(List<T> events) where T : Event
+            {
+                if (events.Count >= 2 && Math.Abs(events[0].StartTime.CurBeat - events[1].StartTime.CurBeat) < float.Epsilon)
+                {
+                    events.RemoveAt(0);
+                }
+                else
+                {
+                    events[0].EndTime = new Beat([1, 0, 1]);
+                }
+            }
+            // Apply cleanup to each event type
+            if (judgeLine.EventLayers[0].AlphaEvents.Count > 0)
+                CleanupRedundantEvents(judgeLine.EventLayers[0].AlphaEvents);
+            if (judgeLine.EventLayers[0].MoveXEvents.Count > 0)
+                CleanupRedundantEvents(judgeLine.EventLayers[0].MoveXEvents);
+            if (judgeLine.EventLayers[0].MoveYEvents.Count > 0)
+                CleanupRedundantEvents(judgeLine.EventLayers[0].MoveYEvents);
+            if (judgeLine.EventLayers[0].RotateEvents.Count > 0)
+                CleanupRedundantEvents(judgeLine.EventLayers[0].RotateEvents);
+            if (judgeLine.EventLayers[0].SpeedEvents.Count > 0)
+                CleanupRedundantEvents(judgeLine.EventLayers[0].SpeedEvents);
 
             rpeChart.JudgeLineList.Add(judgeLine);
         }
@@ -209,14 +227,14 @@ public static class Converters
                         _ => 1
                     }
                 };
-            
+
                 if (note.IsFake != 0)
                 {
                     Console.WriteLine("检查到了不支持的Fake属性：" + note.IsFake);
                     // English
                     Console.WriteLine("Detected unsupported Fake attribute: " + note.IsFake);
                 }
-            
+
                 lineItem.notes.Add(phiNote);
             }
 
@@ -530,6 +548,7 @@ public static class Converters
             // PhiFans坐标系y轴-100 ~ 100
             return y * 4.5f;
         }
+
         /// <summary>
         /// Convert RePhiEdit easing number to PhiFans easing number
         /// </summary>

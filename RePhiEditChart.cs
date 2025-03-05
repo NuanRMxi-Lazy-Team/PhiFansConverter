@@ -6,12 +6,11 @@ namespace PhiFansConverter;
 public struct RpeChart
 {
     // 构造
-    public RpeChart(bool init = true)
+    public RpeChart()
     {
-        if (!init) throw new Exception("init must be true");
-        BpmList = new List<RePhiEditObject.RpeBpm>();
+        BpmList = [];
         Meta = new RePhiEditObject.Meta();
-        JudgeLineList = new RePhiEditObject.JudgeLineList();
+        JudgeLineList = [];
     }
 
     [JsonProperty("BPMList")] public static List<RePhiEditObject.RpeBpm> BpmList;
@@ -49,26 +48,23 @@ public static class RePhiEditObject
             get
             {
                 if (index > 2)
-                {
                     throw new IndexOutOfRangeException();
-                }
-
                 return _beat[index];
             }
             set
             {
                 if (index > 2)
-                {
                     throw new IndexOutOfRangeException();
-                }
-
                 _beat[index] = value;
             }
         }
 
         public float CurBeat => (float)this[1] / this[2] + this[0];
 
-        public int[] Array => _beat;
+        public int[] Array
+        {
+            get => _beat;
+        }
     }
 
     /// <summary>
@@ -98,6 +94,7 @@ public static class RePhiEditObject
 
     public class JudgeLine
     {
+        public string Name = "PhiFansLine";
         public string Texture = "line.png"; // 判定线纹理路径
         [JsonProperty("anchor")] public float[] Anchor = { 0.5f, 0.5f }; // 判定线纹理锚点
         [JsonProperty("eventLayers")] public EventLayers EventLayers = new(); // 事件层
@@ -108,6 +105,84 @@ public static class RePhiEditObject
         [JsonProperty("attachUI")] public string? AttachUi; // 绑定UI名，当不绑定时为null
         [JsonProperty("isGif")] public bool IsGif; // 纹理是否为GIF
         [JsonProperty("bpmfactor")] public float BpmFactor = 1.0f; // BPM因子
+
+        [JsonProperty("alphaControl")] public readonly object[] AlphaControl =
+        [
+            new
+            {
+                alpha = 1.0,
+                easing = 1,
+                x = 0.0
+            },
+            new
+            {
+                alpha = 1.0,
+                easing = 1,
+                x = 9999999.0
+            }
+        ]; // 透明度控制
+        
+        [JsonProperty("extended")] public readonly object Extended = new(); // 扩展数据
+        [JsonProperty("posControl")] public readonly object[] PosControl =
+        [
+            new
+            {
+                easing = 1,
+                pos = 1.0,
+                x = 0.0
+            },
+            new
+            {
+                easing = 1,
+                pos = 1.0,
+                x = 9999999.0
+            }
+        ];
+        [JsonProperty("sizeControl")] public readonly object[] SizeControl =
+        [
+            new
+            {
+                easing = 1,
+                size = 1.0,
+                x = 0.0
+            },
+            new
+            {
+                easing = 1,
+                size = 1.0,
+                x = 9999999.0
+            }
+        ];
+        [JsonProperty("skewControl")] public readonly object[] SkewControl =
+        [
+            new
+            {
+                easing = 1,
+                skew = 0.0,
+                x = 0.0
+            },
+            new
+            {
+                easing = 1,
+                skew = 0.0,
+                x = 9999999.0
+            }
+        ];
+        [JsonProperty("yControl")] public readonly object[] YControl =
+        [
+            new
+            {
+                easing = 1,
+                x = 0.0,
+                y = 1.0
+            },
+            new
+            {
+                easing = 1,
+                x = 9999999.0,
+                y = 1.0
+            }
+        ];
     }
 
     public class JudgeLineList : List<JudgeLine>
@@ -133,8 +208,6 @@ public static class RePhiEditObject
             // 对偏移量进行旋转
             float rotatedOffsetX = (float)(offsetX * Math.Cos(angleRadians) - offsetY * Math.Sin(angleRadians));
             float rotatedOffsetY = (float)(offsetX * Math.Sin(angleRadians) + offsetY * Math.Cos(angleRadians));
-            float x = fatherX + rotatedOffsetX;
-            float y = fatherY + rotatedOffsetY;
 
             // 最后加上父线的位置得到最终位置
             return (fatherX + rotatedOffsetX, fatherY + rotatedOffsetY);
@@ -162,11 +235,11 @@ public static class RePhiEditObject
     /// </summary>
     public class EventLayer
     {
-        [JsonProperty("moveXEvents")] public EventList MoveXEvents = new(); // 移动事件
-        [JsonProperty("moveYEvents")] public EventList MoveYEvents = new(); // 移动事件
-        [JsonProperty("rotateEvents")] public EventList RotateEvents = new(); // 旋转事件
-        [JsonProperty("alphaEvents")] public EventList AlphaEvents = new(); // 透明度事件
-        [JsonProperty("speedEvents")] public SpeedEventList SpeedEvents = new(); // 速度事件
+        [JsonProperty("moveXEvents")] public EventList MoveXEvents = []; // 移动事件
+        [JsonProperty("moveYEvents")] public EventList MoveYEvents = []; // 移动事件
+        [JsonProperty("rotateEvents")] public EventList RotateEvents = []; // 旋转事件
+        [JsonProperty("alphaEvents")] public EventList AlphaEvents = []; // 透明度事件
+        [JsonProperty("speedEvents")] public SpeedEventList SpeedEvents = []; // 速度事件
     }
 
     /// <summary>
@@ -183,32 +256,40 @@ public static class RePhiEditObject
             float alpha = LastAlphaEventEndBeat;
             return Math.Max(x, Math.Max(y, Math.Max(angle, alpha)));
         }
-        
+
         public float GetXAtBeat(float t) =>
             this.Sum(eventLayer => eventLayer.MoveXEvents.GetValueAtBeat(t));
+
         public bool HasXEventAtBeat(float beat) =>
             this.Any(eventLayer => eventLayer.MoveXEvents.HasEventAtBeat(beat));
+
         public float LastXEventEndBeat =>
             this.Max(eventLayer => eventLayer.MoveXEvents.LastEventEndBeat());
-        
+
         public float GetYAtBeat(float t) =>
             this.Sum(eventLayer => eventLayer.MoveYEvents.GetValueAtBeat(t));
+
         public bool HasYEventAtBeat(float beat) =>
             this.Any(eventLayer => eventLayer.MoveYEvents.HasEventAtBeat(beat));
+
         public float LastYEventEndBeat =>
             this.Max(eventLayer => eventLayer.MoveYEvents.LastEventEndBeat());
 
         public float GetAngleAtBeat(float t) =>
             this.Sum(eventLayer => eventLayer.RotateEvents.GetValueAtBeat(t));
+
         public bool HasAngleEventAtBeat(float beat) =>
             this.Any(eventLayer => eventLayer.RotateEvents.HasEventAtBeat(beat));
+
         public float LastAngleEventEndBeat =>
             this.Max(eventLayer => eventLayer.RotateEvents.LastEventEndBeat());
 
         public float GetAlphaAtBeat(float t) =>
             this.Sum(eventLayer => eventLayer.AlphaEvents.GetValueAtBeat(t));
+
         public bool HasAlphaEventAtBeat(float beat) =>
             this.Any(eventLayer => eventLayer.AlphaEvents.HasEventAtBeat(beat));
+
         public float LastAlphaEventEndBeat =>
             this.Max(eventLayer => eventLayer.AlphaEvents.LastEventEndBeat());
     }
@@ -266,16 +347,18 @@ public static class RePhiEditObject
             var previousEvent = FindLast(e => beat > e.EndTime.CurBeat);
             return previousEvent?.End ?? 0;
         }
+
         public bool HasEventAtBeat(float beat)
         {
             // 如果有事件在这个拍上，返回true
             return this.Any(e => beat >= e.StartTime.CurBeat && beat <= e.EndTime.CurBeat);
         }
+
         // 最后一个事件的结束拍
         public float LastEventEndBeat()
         {
             if (Count == 0) return 0;
-            
+
             return this.Last().EndTime.CurBeat;
         }
     }
@@ -320,13 +403,16 @@ public static class RePhiEditObject
         [JsonProperty("type")] public int Type; // 类型（1 为 Tap、2 为 Hold、3 为 Flick、4 为 Drag）
         [JsonProperty("visibleTime")] public float VisibleTime; // 可见时间（单位为秒）
         [JsonProperty("yOffset")] public float YOffset; // Y偏移
-        [JsonProperty("hitsound")] public string? HitSound; // 音效
+
+        [JsonProperty("hitsound", NullValueHandling = NullValueHandling.Ignore)]
+        public string? HitSound; // 音效
     }
 }
 
 public class BeatJsonConverter : JsonConverter<RePhiEditObject.Beat>
 {
-    public override RePhiEditObject.Beat ReadJson(JsonReader reader, Type objectType, RePhiEditObject.Beat existingValue,
+    public override RePhiEditObject.Beat ReadJson(JsonReader reader, Type objectType,
+        RePhiEditObject.Beat existingValue,
         bool hasExistingValue, JsonSerializer serializer)
     {
         JArray array = JArray.Load(reader);
