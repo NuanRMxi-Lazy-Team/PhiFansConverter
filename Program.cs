@@ -32,9 +32,9 @@ if (type == 1)
     }
     RpeChart rpeChart = Converters.PhiFansConverter(chart);
     File.WriteAllText("rpe.json", JsonConvert.SerializeObject(rpeChart, Formatting.Indented));
-    Console.WriteLine("已保存在" + Path.GetFullPath("rpe.json"));
+    Console.WriteLine("转换的文件已保存在" + Path.GetFullPath("rpe.json"));
     Console.WriteLine("Saved to " + Path.GetFullPath("rpe.json"));
-    Console.WriteLine("按回车键退出");
+    Console.WriteLine("按回车键退出本程序。");
     Console.WriteLine("Press Enter to exit");
     Console.ReadLine();
 }
@@ -44,15 +44,15 @@ else if (type == 2)
     RpeChart chart = JsonConvert.DeserializeObject<RpeChart>(json);
     PhiFansChart phiFansChart = Converters.RePhiEditConverter(chart);
     File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.Indented));
-    Console.WriteLine("已保存在" + Path.GetFullPath("phifans.json"));
+    Console.WriteLine("转换的文件已保存在" + Path.GetFullPath("phifans.json"));
     Console.WriteLine("Saved to " + Path.GetFullPath("phifans.json"));
-    Console.WriteLine("按回车键退出");
+    Console.WriteLine("按回车键退出本程序。");
     Console.WriteLine("Press Enter to exit");
     Console.ReadLine();
 }
 else
 {
-    Console.WriteLine("未知的类型！");
+    Console.WriteLine("未知的类型！你给它喂了Minecraft的翻译文件吗(zh-cn.json)？");
     Console.WriteLine("Unknown type!");
     goto hey;
 }
