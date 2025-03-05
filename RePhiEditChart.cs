@@ -89,7 +89,7 @@ public static class RePhiEditObject
         [JsonProperty("background")] public string Background; // 曲绘
         [JsonProperty("charter")] public string Charter; // 谱师
         [JsonProperty("composer")] public string Composer; // 曲师
-        [JsonProperty("illustration")] public string Illustration; // 曲绘画师
+        [JsonProperty("illustration")] public string Illustrator; // 曲绘画师
         [JsonProperty("level")] public string Level; // 难度
         [JsonProperty("name")] public string Name; // 曲名
         [JsonProperty("offset")] public int Offset; // 音乐偏移
@@ -98,15 +98,15 @@ public static class RePhiEditObject
 
     public class JudgeLine
     {
-        public string Texture = "line.png"; // 判定线材质路径
-        [JsonProperty("anchor")] public float[] Anchor = { 0.5f, 0.5f }; // 判定线材质锚点
+        public string Texture = "line.png"; // 判定线纹理路径
+        [JsonProperty("anchor")] public float[] Anchor = { 0.5f, 0.5f }; // 判定线纹理锚点
         [JsonProperty("eventLayers")] public EventLayers EventLayers = new(); // 事件层
         [JsonProperty("father")] public int Father = -1; // 父级
         [JsonProperty("isCover")] public int IsCover = 1; // 是否遮罩（1为遮罩，0为不遮罩）
         [JsonProperty("notes")] public List<Note> Notes = new(); // note列表
         [JsonProperty("zOrder")] public int ZOrder; // Z轴顺序
         [JsonProperty("attachUI")] public string? AttachUi; // 绑定UI名，当不绑定时为null
-        [JsonProperty("isGif")] public bool IsGif; // 材质是否为GIF
+        [JsonProperty("isGif")] public bool IsGif; // 纹理是否为GIF
         [JsonProperty("bpmfactor")] public float BpmFactor = 1.0f; // BPM因子
     }
 

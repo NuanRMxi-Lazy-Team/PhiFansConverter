@@ -12,7 +12,7 @@ public static class Converters
     {
         RpeChart rpeChart = new();
         rpeChart.Meta.RpeVersion = 150;
-        rpeChart.Meta.Illustration = chart.info.illustration;
+        rpeChart.Meta.Illustrator = chart.info.illustrator;
         rpeChart.Meta.Composer = chart.info.artist;
         rpeChart.Meta.Charter = chart.info.designer;
         rpeChart.Meta.Name = chart.info.name;
@@ -164,7 +164,7 @@ public static class Converters
         var phiFansChart = new PhiFansChart();
         phiFansChart.info.artist = chart.Meta.Composer;
         phiFansChart.info.designer = chart.Meta.Charter;
-        phiFansChart.info.illustration = chart.Meta.Illustration;
+        phiFansChart.info.illustrator = chart.Meta.Illustrator;
         phiFansChart.info.level = chart.Meta.Level;
         phiFansChart.info.name = chart.Meta.Name;
         phiFansChart.offset = chart.Meta.Offset;
