@@ -23,7 +23,10 @@ public static class PhiFansObject
     {
         public string name;        // 曲名
         public string artist;      // 曲师
-        public string illustrator;// 插画画师
+        public string illustration;// 插画
+        /*
+         * TODO：我想骂人
+         */
         public string level;       // 等级
         public string designer;    // 谱师
     }

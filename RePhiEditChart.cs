@@ -89,7 +89,7 @@ public static class RePhiEditObject
         [JsonProperty("background")] public string Background; // 曲绘
         [JsonProperty("charter")] public string Charter; // 谱师
         [JsonProperty("composer")] public string Composer; // 曲师
-        [JsonProperty("illustration")] public string Illustrator; // 曲绘画师
+        [JsonProperty("illustration")] public string Illustration; // 曲绘画师
         [JsonProperty("level")] public string Level; // 难度
         [JsonProperty("name")] public string Name; // 曲名
         [JsonProperty("offset")] public int Offset; // 音乐偏移
