@@ -19,14 +19,11 @@ public static class PhiFansObject
         public float bpm = 120;
     }
     [JsonObject]
-    public struct Info
+    public class Info
     {
         public string name;        // 曲名
         public string artist;      // 曲师
         public string illustration;// 插画
-        /*
-         * TODO：我想骂人
-         */
         public string level;       // 等级
         public string designer;    // 谱师
     }

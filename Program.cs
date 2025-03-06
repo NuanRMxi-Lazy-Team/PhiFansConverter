@@ -1,58 +1,37 @@
 ﻿using Newtonsoft.Json;
 using PhiFansConverter;
 
-const float precision = 1f / 8f;
-const float speedRatio = 8f;
 hey:
-Console.WriteLine("请选择一个文件：");
-Console.WriteLine("Please select a file:");
+L10n.Print("SelectFile");
 string? path = Console.ReadLine();
 if (!File.Exists(path))
 {
-    Console.WriteLine("文件不存在！");
-    Console.WriteLine("File not found!");
+    L10n.Print("FileNotFound");
     return;
 }
-
-// 询问这是什么类型的文件
-Console.WriteLine("这是什么类型的文件？（1. PhiFans 2. RPE）");
-// English
-Console.WriteLine("What type of file is this? (1. PhiFans 2. RPE)");
-int type = int.Parse(Console.ReadLine());
-if (type == 1)
+string json = File.ReadAllText(path);
+var pfChart = JsonConvert.DeserializeObject<PhiFansChart>(json);
+var rpeChart = JsonConvert.DeserializeObject<RpeChart>(json);
+if (pfChart.info is not null)
 {
-    string json = File.ReadAllText(path);
-    PhiFansChart? chart = JsonConvert.DeserializeObject<PhiFansChart>(json);
-    if (chart == null)
-    {
-        Console.WriteLine("无法解析文件！");
-        // English
-        Console.WriteLine("Failed to parse file!");
-        goto hey;
-    }
-    RpeChart rpeChart = Converters.PhiFansConverter(chart);
-    File.WriteAllText("rpe.json", JsonConvert.SerializeObject(rpeChart, Formatting.Indented));
-    Console.WriteLine("转换的文件已保存在" + Path.GetFullPath("rpe.json"));
-    Console.WriteLine("Saved to " + Path.GetFullPath("rpe.json"));
-    Console.WriteLine("按回车键退出本程序。");
-    Console.WriteLine("Press Enter to exit");
-    Console.ReadLine();
+    // 是 PhiFans 文件
+    var convertedRpeChart = Converters.PhiFansConverter(pfChart);
+    File.WriteAllText("rpe.json", JsonConvert.SerializeObject(convertedRpeChart, Formatting.None));
+    L10n.Print("SavedTo", Path.GetFullPath("rpe.json"));
 }
-else if (type == 2)
+if (rpeChart.bpmlist is not null)
 {
-    string json = File.ReadAllText(path);
-    RpeChart chart = JsonConvert.DeserializeObject<RpeChart>(json);
-    PhiFansChart phiFansChart = Converters.RePhiEditConverter(chart);
-    File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.Indented));
-    Console.WriteLine("转换的文件已保存在" + Path.GetFullPath("phifans.json"));
-    Console.WriteLine("Saved to " + Path.GetFullPath("phifans.json"));
-    Console.WriteLine("按回车键退出本程序。");
-    Console.WriteLine("Press Enter to exit");
-    Console.ReadLine();
+    // 是 RPE 文件
+    var phiFansChart = Converters.RePhiEditConverter(rpeChart);
+    File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.None));
+    L10n.Print("SavedTo", Path.GetFullPath("phifans.json"));
 }
 else
 {
-    Console.WriteLine("未知的类型！你给它喂了Minecraft的翻译文件吗(zh-cn.json)？");
-    Console.WriteLine("Unknown type!");
+    L10n.Print("FormatError");
+    L10n.Print("PressEnterToSelectAgain");
+    Console.ReadLine();
     goto hey;
 }
+L10n.Print("PressEnterToExit");
+Console.ReadLine();
