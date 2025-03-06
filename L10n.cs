@@ -12,7 +12,11 @@ public static class L10n
         ["SavedTo"] = "转换的文件已保存在{0}",
         ["FormatError"] = "文件格式不正确！",
         ["PressEnterToSelectAgain"] = "按回车键重新选择文件",
-        ["PressEnterToExit"] = "按回车键退出本程序。"
+        ["PressEnterToExit"] = "按回车键退出本程序。",
+        ["DoYouNeedAutomaticPackaging"] = "是否需要自动打包？（y/n）",
+        ["SelectIllustration"] = "请选择插画文件：",
+        ["SelectMusic"] = "选择音乐文件",
+
     };
 
     private static readonly Dictionary<string, string> en_US = new()
@@ -22,7 +26,10 @@ public static class L10n
         ["SavedTo"] = "Saved to {0}",
         ["FormatError"] = "File format is incorrect!",
         ["PressEnterToSelectAgain"] = "Press Enter to select a file again",
-        ["PressEnterToExit"] = "Press Enter to exit"
+        ["PressEnterToExit"] = "Press Enter to exit",
+        ["DoYouNeedAutomaticPackaging"] = "Do you need automatic packaging?(y/n)",
+        ["SelectIllustration"] = "Please select an illustration file:",
+        ["SelectMusic"] = "Select a music file",
     };
 
     private static readonly List<string> SupportedLanguages = new() { "zh-CN", "en-US" };
