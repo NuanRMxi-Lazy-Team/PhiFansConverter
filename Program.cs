@@ -2,6 +2,40 @@
 using PhiFansConverter;
 using System.IO.Compression;
 
+Console.WriteLine("PhiFans Converter v1.0.5");
+Console.WriteLine("Please Choose a Language");// 选择语言英文
+Console.WriteLine("Language: 1. English (US) (Default) 2. 简体中文 （中国大陆） 3. 日本語 （日本國） 4. 繁體中文 （香港） 5. ???");
+string langNumStr = Console.ReadLine()!;
+if (string.IsNullOrEmpty(langNumStr))
+    langNumStr = "1";
+try
+{
+    _ = int.Parse(langNumStr);
+}
+catch (Exception)
+{
+    langNumStr = "1";
+}
+int langNum = int.Parse(langNumStr);
+switch (langNum)
+{
+    case 1:
+        L10n.CurrentLanguage = "en-US";
+        break;
+    case 2:
+        L10n.CurrentLanguage = "zh-CN";
+        break;
+    case 3:
+        L10n.CurrentLanguage = "ja-JP";
+        break;
+    case 4:
+        L10n.CurrentLanguage = "zh-ST";
+        break;
+    default:
+        L10n.CurrentLanguage = "en-US";
+        break;
+}
+
 hey:
 L10n.Print("SelectFile");
 string? path = Console.ReadLine();
@@ -10,12 +44,12 @@ if (!File.Exists(path))
     L10n.Print("FileNotFound");
     return;
 }
-string json = File.ReadAllText(path);
+var json = File.ReadAllText(path);
 var pfChart = JsonConvert.DeserializeObject<PhiFansChart>(json);
 var rpeChart = JsonConvert.DeserializeObject<RpeChart>(json);
 if (pfChart.info is not null)
 {
-    // 是 PhiFans 文件
+    // Is PhiFans file
     var convertedRpeChart = Converters.PhiFansConverter(pfChart);
     L10n.Print("DoYouNeedAutomaticPackaging");
     if (Console.ReadLine().ToLower() == "y")
@@ -32,9 +66,9 @@ if (pfChart.info is not null)
             string zipPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pack.zip");
             using (var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create))
             {
-                ZipFileExtensions.CreateEntryFromFile(zip, path, Path.GetFileName(path));
-                ZipFileExtensions.CreateEntryFromFile(zip, illustrationPath, Path.GetFileName(illustrationPath));
-                ZipFileExtensions.CreateEntryFromFile(zip, musicPath, Path.GetFileName(musicPath));
+                zip.CreateEntryFromFile(path, Path.GetFileName(path));
+                zip.CreateEntryFromFile(illustrationPath, Path.GetFileName(illustrationPath));
+                zip.CreateEntryFromFile(musicPath, Path.GetFileName(musicPath));
             }
             // 重命名 zip 文件为 pack.pez
             string pezPath = Path.ChangeExtension(zipPath, ".pez");
@@ -51,7 +85,7 @@ if (pfChart.info is not null)
 }
 if (rpeChart.bpmlist is not null)
 {
-    // 是 RPE 文件
+    // Is RePhiEdit file
     var phiFansChart = Converters.RePhiEditConverter(rpeChart);
     File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.None));
     L10n.Print("SavedTo", Path.GetFullPath("phifans.json"));

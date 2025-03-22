@@ -180,11 +180,14 @@ public static class Converters
     public static PhiFansChart RePhiEditConverter(RpeChart chart)
     {
         var phiFansChart = new PhiFansChart();
-        phiFansChart.info.artist = chart.Meta.Composer;
-        phiFansChart.info.designer = chart.Meta.Charter;
-        phiFansChart.info.illustration = chart.Meta.Illustration;
-        phiFansChart.info.level = chart.Meta.Level;
-        phiFansChart.info.name = chart.Meta.Name;
+        phiFansChart.info = new()
+        {
+            artist = chart.Meta.Composer,
+            designer = chart.Meta.Charter,
+            illustration = chart.Meta.Illustration,
+            level = chart.Meta.Level,
+            name = chart.Meta.Name
+        };
         phiFansChart.offset = chart.Meta.Offset;
         foreach (var bpm in chart.bpmlist)
         {
@@ -240,10 +243,8 @@ public static class Converters
 
             if (judgeline.EventLayers.Count > 1 || judgeline.Father != -1)
             {
-                Console.WriteLine("天哪！！！多层事件或父子线！！！这将需要很长的处理时间！");
-                // English
-                Console.WriteLine(
-                    "Oh my god!!! Multi-layer events or parent-child lines!!! This will take a long time to process!");
+                L10n.Print("RePhiEditFeatureWarn",L10n.GetString("NestedParentChildLine"));
+                L10n.Print("RePhiEditFeatureWarn",L10n.GetString("Multilayer"));
                 // 求所有事件层级中，最后一个事件的结束时间
                 // Get the end time of the last event in all event layers
                 float maxBeat = judgeline.EventLayers.LastEventEndBeat();
