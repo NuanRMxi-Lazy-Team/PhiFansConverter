@@ -2,7 +2,7 @@
 using PhiFansConverter;
 using System.IO.Compression;
 
-Console.WriteLine("PhiFans Converter v1.0.5");
+Console.WriteLine("PhiFans Converter v1.0.6");
 Console.WriteLine("Please Choose a Language");// 选择语言英文
 Console.WriteLine("Language: 1. English (US) (Default) 2. 简体中文 （中国大陆） 3. 日本語 （日本國） 4. 繁體中文 5. ???");
 string langNumStr = Console.ReadLine()!;
