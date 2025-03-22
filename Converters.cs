@@ -61,11 +61,11 @@ public static class Converters
             {
                 var item = lineItem.props.speed[i];
                 var value = PhiFans.TransformX(item.value);
-                var start = item.continuous ? lineItem.props.positionY[i - 1].value : value;
+                var start = item.continuous ? lineItem.props.speed[i - 1].value : value;
                 SpeedEvent eventItem = new()
                 {
                     StartTime = item.continuous
-                        ? IntArrayToBeat(lineItem.props.positionX[i - 1].beat)
+                        ? IntArrayToBeat(lineItem.props.speed[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
                     Start = start * SpeedRatio,
@@ -86,7 +86,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.positionX[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : value,
+                    Start = item.continuous ? PhiFans.TransformX(lineItem.props.positionX[i - 1].value) : value,
                     End = value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
@@ -104,7 +104,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.positionY[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : value,
+                    Start = item.continuous ? PhiFans.TransformY(lineItem.props.positionY[i - 1].value) : value,
                     End = value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
@@ -121,7 +121,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.alpha[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : item.value,
+                    Start = item.continuous ? lineItem.props.alpha[i - 1].value : item.value,
                     End = item.value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };
@@ -139,7 +139,7 @@ public static class Converters
                         ? IntArrayToBeat(lineItem.props.rotate[i - 1].beat)
                         : IntArrayToBeat(item.beat),
                     EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? lineItem.props.positionY[i - 1].value : item.value,
+                    Start = item.continuous ? lineItem.props.rotate[i - 1].value : item.value,
                     End = item.value,
                     EasingType = RePhiEdit.EasingNumber(item.easing)
                 };

@@ -86,7 +86,7 @@ if (pfChart.info is not null)
     File.WriteAllText("rpe.json", JsonConvert.SerializeObject(convertedRpeChart, Formatting.None));
     L10n.Print("SavedTo", Path.GetFullPath("rpe.json"));
 }
-if (rpeChart.bpmlist is not null)
+if (rpeChart.Meta.Name is not null)
 {
     // Is RePhiEdit file
     var phiFansChart = Converters.RePhiEditConverter(rpeChart);
