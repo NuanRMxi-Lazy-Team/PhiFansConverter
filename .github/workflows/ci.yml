@@ -1,0 +1,39 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.x' # 替换成你需要的 .NET 版本
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Analyze build warnings and errors
+        id: analyze
+        run: |
+          warnings=$(dotnet build --no-restore --configuration Release | tee /dev/tty | grep -oP '(?<=: warning ).*' | wc -l)
+          errors=$(dotnet build --no-restore --configuration Release | tee /dev/tty | grep -oP '(?<=: error ).*' | wc -l)
+          echo "::set-output name=warnings::$warnings"
+          echo "::set-output name=errors::$errors"
+
+      - name: Report build warnings and errors
+        run: |
+          echo "Total Warnings: ${{ steps.analyze.outputs.warnings }}"
+          echo "Total Errors: ${{ steps.analyze.outputs.errors }}"
