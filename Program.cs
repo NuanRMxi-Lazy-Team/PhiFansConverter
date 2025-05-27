@@ -39,7 +39,7 @@ switch (langNum)
         break;
 }
 
-hey:
+selectFile:
 L10n.Print("SelectFile");
 string? path = Console.ReadLine();
 if (!File.Exists(path))
@@ -48,14 +48,14 @@ if (!File.Exists(path))
     return;
 }
 var json = File.ReadAllText(path);
-var pfChart = JsonConvert.DeserializeObject<PhiFansChart>(json);
 var rpeChart = JsonConvert.DeserializeObject<RpeChart>(json);
-if (pfChart.info is not null)
+if (json.Contains("props"))
 {
+    var pfChart = JsonConvert.DeserializeObject<PhiFansChart>(json);
     // Is PhiFans file
-    var convertedRpeChart = Converters.PhiFansConverter(pfChart);
+    var convertedRpeChart = Converters.PhiFansConverter(pfChart!);
     L10n.Print("DoYouNeedAutomaticPackaging");
-    if (Console.ReadLine().ToLower() == "y")
+    if (Console.ReadLine()?.ToLower() == "y")
     {
         L10n.Print("SelectIllustration");
         string? illustrationPath = Console.ReadLine();
@@ -98,7 +98,7 @@ else
     L10n.Print("FormatError");
     L10n.Print("PressEnterToSelectAgain");
     Console.ReadLine();
-    goto hey;
+    goto selectFile;
 }
 L10n.Print("PressEnterToExit");
 Console.ReadLine();

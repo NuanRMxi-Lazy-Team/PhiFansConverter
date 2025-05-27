@@ -2,6 +2,7 @@
 
 namespace PhiFansConverter;
 
+// ReSharper disable InconsistentNaming
 public static class L10n
 {
     // ReSharper disable InconsistentNaming
@@ -95,13 +96,8 @@ public static class L10n
     public static string CurrentLanguage
     {
         get => _currentLanguage;
-        set
-        {
-            if (SupportedLanguages.Contains(value))
-                _currentLanguage = value;
-            else
-                _currentLanguage = "en-US"; // Default to English if unsupported
-        }
+        set => _currentLanguage =
+            SupportedLanguages.Contains(value) ? value : "en-US"; // Default to English if unsupported
     }
 
     // For backward compatibility
@@ -112,7 +108,7 @@ public static class L10n
     }
 
     // For bilingual output
-    public static bool BilingualMode { get; set; } = false;
+    public static bool BilingualMode { get; set; }
 
     private static string GetDefaultLanguage()
     {
@@ -126,6 +122,7 @@ public static class L10n
                 return "zh-Hant";
             return "zh-CN";
         }
+
         if (systemLang.StartsWith("ja-"))
             return "ja-JP";
         return "en-US"; // Default fallback
@@ -159,7 +156,7 @@ public static class L10n
             _ => en_US.GetValueOrDefault(key, key)
         };
 
-        Console.WriteLine(string.Format(text, args));
+        Console.WriteLine(text, args);
     }
 
     public static string GetString(string key)

@@ -6,142 +6,142 @@ namespace PhiFansConverter;
 public static class Converters
 {
     private const float Precision = 1f / 8f;
-    private const float SpeedRatio = 8f;
+    private const float SpeedRatio = 6f;
 
     public static RpeChart PhiFansConverter(PhiFansChart chart)
     {
         RpeChart rpeChart = new();
         rpeChart.Meta.RpeVersion = 150;
-        rpeChart.Meta.Illustration = chart.info.illustration;
-        rpeChart.Meta.Composer = chart.info.artist;
-        rpeChart.Meta.Charter = chart.info.designer;
-        rpeChart.Meta.Name = chart.info.name;
-        rpeChart.Meta.Level = chart.info.level;
-        rpeChart.Meta.Offset = chart.offset;
+        rpeChart.Meta.Illustration = chart.Info.Illustration;
+        rpeChart.Meta.Composer = chart.Info.Artist;
+        rpeChart.Meta.Charter = chart.Info.Designer;
+        rpeChart.Meta.Name = chart.Info.Name;
+        rpeChart.Meta.Level = chart.Info.Level;
+        rpeChart.Meta.Offset = chart.Offset;
         rpeChart.JudgeLineList = [];
-        rpeChart.bpmlist = [];
-        foreach (var bpmItem in chart.bpm)
+        rpeChart.BpmList = [];
+        foreach (var bpmItem in chart.Bpm)
         {
-            rpeChart.bpmlist.Add(new RpeBpm
+            rpeChart.BpmList.Add(new RpeBpm
             {
-                StartTime = IntArrayToBeat(bpmItem.beat),
-                Bpm = bpmItem.bpm
+                StartTime = new Beat(bpmItem.Beat),
+                Bpm = bpmItem.Bpm
             });
         }
 
-        foreach (var lineItem in chart.lines)
+        foreach (var lineItem in chart.Lines)
         {
             JudgeLine judgeLine = new()
             {
                 Notes = []
             };
-            foreach (var note in lineItem.notes)
+            foreach (var note in lineItem.Notes)
             {
                 Note rpeNote = new(true)
                 {
-                    Type = note.type switch
+                    Type = note.Type switch
                     {
                         2 => 4, // Drag
                         4 => 3, // Flick
                         3 => 2, // Hold
                         _ => 1 // Default to Tap
                     },
-                    StartTime = IntArrayToBeat(note.beat),
-                    PositionX = PhiFans.TransformX(note.positionX),
-                    SpeedMultiplier = note.speed,
-                    Above = note.isAbove ? 1 : 0,
+                    StartTime = new Beat(note.Beat),
+                    PositionX = PhiFans.TransformX(note.PositionX),
+                    SpeedMultiplier = note.Speed,
+                    Above = note.IsAbove ? 1 : 0,
                     Size = 1f,
-                    EndTime = IntArrayToBeat(note.holdEndBeat)
+                    EndTime = new Beat(note.HoldEndBeat)
                 };
                 judgeLine.Notes.Add(rpeNote);
             }
 
             judgeLine.EventLayers = [new EventLayer()];
-            for (var i = 0; i < lineItem.props.speed.Count; i++)
+            for (var i = 0; i < lineItem.Props.Speed.Count; i++)
             {
-                var item = lineItem.props.speed[i];
-                var value = PhiFans.TransformX(item.value);
-                var start = item.continuous ? lineItem.props.speed[i - 1].value : value;
-                SpeedEvent eventItem = new()
+                var item = lineItem.Props.Speed[i];
+                var value = PhiFans.TransformX(item.Value);
+                var start = item.Continuous ? lineItem.Props.Speed[i - 1].Value : value;
+                Event eventItem = new()
                 {
-                    StartTime = item.continuous
-                        ? IntArrayToBeat(lineItem.props.speed[i - 1].beat)
-                        : IntArrayToBeat(item.beat),
-                    EndTime = IntArrayToBeat(item.beat),
+                    StartTime = item.Continuous
+                        ? new Beat(lineItem.Props.Speed[i - 1].Beat)
+                        : new Beat(item.Beat),
+                    EndTime = new Beat(item.Beat),
                     Start = start * SpeedRatio,
-                    End = item.value * SpeedRatio,
+                    End = item.Value * SpeedRatio,
                     EasingType = 1
                 };
                 judgeLine.EventLayers[0].SpeedEvents.Add(eventItem);
             }
 
-            for (var i = 0; i < lineItem.props.positionX.Count; i++)
+            for (var i = 0; i < lineItem.Props.PositionX.Count; i++)
             {
-                var item = lineItem.props.positionX[i];
-                var value = PhiFans.TransformX(item.value);
+                var item = lineItem.Props.PositionX[i];
+                var value = PhiFans.TransformX(item.Value);
 
                 Event eventItem = new()
                 {
-                    StartTime = item.continuous
-                        ? IntArrayToBeat(lineItem.props.positionX[i - 1].beat)
-                        : IntArrayToBeat(item.beat),
-                    EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? PhiFans.TransformX(lineItem.props.positionX[i - 1].value) : value,
+                    StartTime = item.Continuous
+                        ? new Beat(lineItem.Props.PositionX[i - 1].Beat)
+                        : new Beat(item.Beat),
+                    EndTime = new Beat(item.Beat),
+                    Start = item.Continuous ? PhiFans.TransformX(lineItem.Props.PositionX[i - 1].Value) : value,
                     End = value,
-                    EasingType = RePhiEdit.EasingNumber(item.easing)
+                    EasingType = RePhiEdit.EasingNumber(item.Easing)
                 };
 
                 judgeLine.EventLayers[0].MoveXEvents.Add(eventItem);
             }
 
-            for (var i = 0; i < lineItem.props.positionY.Count; i++)
+            for (var i = 0; i < lineItem.Props.PositionY.Count; i++)
             {
-                var item = lineItem.props.positionY[i];
-                var value = PhiFans.TransformY(item.value);
+                var item = lineItem.Props.PositionY[i];
+                var value = PhiFans.TransformY(item.Value);
                 Event eventItem = new()
                 {
-                    StartTime = item.continuous
-                        ? IntArrayToBeat(lineItem.props.positionY[i - 1].beat)
-                        : IntArrayToBeat(item.beat),
-                    EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? PhiFans.TransformY(lineItem.props.positionY[i - 1].value) : value,
+                    StartTime = item.Continuous
+                        ? new Beat(lineItem.Props.PositionY[i - 1].Beat)
+                        : new Beat(item.Beat),
+                    EndTime = new Beat(item.Beat),
+                    Start = item.Continuous ? PhiFans.TransformY(lineItem.Props.PositionY[i - 1].Value) : value,
                     End = value,
-                    EasingType = RePhiEdit.EasingNumber(item.easing)
+                    EasingType = RePhiEdit.EasingNumber(item.Easing)
                 };
                 judgeLine.EventLayers[0].MoveYEvents.Add(eventItem);
             }
 
             // alpha
-            for (var i = 0; i < lineItem.props.alpha.Count; i++)
+            for (var i = 0; i < lineItem.Props.Alpha.Count; i++)
             {
-                var item = lineItem.props.alpha[i];
+                var item = lineItem.Props.Alpha[i];
                 Event eventItem = new()
                 {
-                    StartTime = lineItem.props.alpha[i].continuous
-                        ? IntArrayToBeat(lineItem.props.alpha[i - 1].beat)
-                        : IntArrayToBeat(item.beat),
-                    EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? lineItem.props.alpha[i - 1].value : item.value,
-                    End = item.value,
-                    EasingType = RePhiEdit.EasingNumber(item.easing)
+                    StartTime = lineItem.Props.Alpha[i].Continuous
+                        ? new Beat(lineItem.Props.Alpha[i - 1].Beat)
+                        : new Beat(item.Beat),
+                    EndTime = new Beat(item.Beat),
+                    Start = item.Continuous ? lineItem.Props.Alpha[i - 1].Value : item.Value,
+                    End = item.Value,
+                    EasingType = RePhiEdit.EasingNumber(item.Easing)
                 };
 
                 judgeLine.EventLayers[0].AlphaEvents.Add(eventItem);
             }
 
             // rotate
-            for (var i = 0; i < lineItem.props.rotate.Count; i++)
+            for (var i = 0; i < lineItem.Props.Rotate.Count; i++)
             {
-                var item = lineItem.props.rotate[i];
+                var item = lineItem.Props.Rotate[i];
                 Event eventItem = new()
                 {
-                    StartTime = item.continuous
-                        ? IntArrayToBeat(lineItem.props.rotate[i - 1].beat)
-                        : IntArrayToBeat(item.beat),
-                    EndTime = IntArrayToBeat(item.beat),
-                    Start = item.continuous ? lineItem.props.rotate[i - 1].value : item.value,
-                    End = item.value,
-                    EasingType = RePhiEdit.EasingNumber(item.easing)
+                    StartTime = item.Continuous
+                        ? new Beat(lineItem.Props.Rotate[i - 1].Beat)
+                        : new Beat(item.Beat),
+                    EndTime = new Beat(item.Beat),
+                    Start = item.Continuous ? lineItem.Props.Rotate[i - 1].Value : item.Value,
+                    End = item.Value,
+                    EasingType = RePhiEdit.EasingNumber(item.Easing)
                 };
 
                 judgeLine.EventLayers[0].RotateEvents.Add(eventItem);
@@ -150,7 +150,7 @@ public static class Converters
             // Check if the first two events of each event type have the same start value, if so, delete the first one
             void CleanupRedundantEvents<T>(List<T> events) where T : Event
             {
-                if (events.Count >= 2 && Math.Abs(events[0].StartTime.CurBeat - events[1].StartTime.CurBeat) < float.Epsilon)
+                if (events.Count >= 2 && Math.Abs(events[0].StartTime - events[1].StartTime) < float.Epsilon)
                 {
                     events.RemoveAt(0);
                 }
@@ -180,21 +180,21 @@ public static class Converters
     public static PhiFansChart RePhiEditConverter(RpeChart chart)
     {
         var phiFansChart = new PhiFansChart();
-        phiFansChart.info = new()
+        phiFansChart.Info = new()
         {
-            artist = chart.Meta.Composer,
-            designer = chart.Meta.Charter,
-            illustration = chart.Meta.Illustration,
-            level = chart.Meta.Level,
-            name = chart.Meta.Name
+            Artist = chart.Meta.Composer,
+            Designer = chart.Meta.Charter,
+            Illustration = chart.Meta.Illustration,
+            Level = chart.Meta.Level,
+            Name = chart.Meta.Name
         };
-        phiFansChart.offset = chart.Meta.Offset;
-        foreach (var bpm in chart.bpmlist)
+        phiFansChart.Offset = chart.Meta.Offset;
+        foreach (var bpm in chart.BpmList)
         {
-            phiFansChart.bpm.Add(new PhiFansObject.BpmItem
+            phiFansChart.Bpm.Add(new PhiFansObject.BpmItem
             {
-                beat = bpm.StartTime.Array,
-                bpm = bpm.Bpm
+                Beat = bpm.StartTime,
+                Bpm = bpm.Bpm
             });
         }
 
@@ -210,19 +210,21 @@ public static class Converters
                 Console.WriteLine("Detected unsupported judge line texture: " + judgeline.Texture);
             }
 
-            var lineItem = new PhiFansObject.LineItem();
-            lineItem.props = new PhiFansObject.PropsObject();
-            lineItem.notes = new();
+            var lineItem = new PhiFansObject.LineItem()
+            {
+                Props = new PhiFansObject.PropsObject(),
+                Notes = []
+            };
             foreach (var note in judgeline.Notes)
             {
                 var phiNote = new PhiFansObject.Note
                 {
-                    beat = note.StartTime.Array,
-                    positionX = RePhiEdit.TransformX(note.PositionX),
-                    speed = note.SpeedMultiplier,
-                    isAbove = note.Above == 1,
-                    holdEndBeat = note.EndTime.Array,
-                    type = note.Type switch
+                    Beat = note.StartTime,
+                    PositionX = RePhiEdit.TransformX(note.PositionX),
+                    Speed = note.SpeedMultiplier,
+                    IsAbove = note.Above == 1,
+                    HoldEndBeat = note.EndTime,
+                    Type = note.Type switch
                     {
                         4 => 2,
                         3 => 4,
@@ -238,7 +240,7 @@ public static class Converters
                     Console.WriteLine("Detected unsupported Fake attribute: " + note.IsFake);
                 }
 
-                lineItem.notes.Add(phiNote);
+                lineItem.Notes.Add(phiNote);
             }
 
             if (judgeline.EventLayers.Count > 1 || judgeline.Father != -1)
@@ -256,12 +258,12 @@ public static class Converters
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = BeatConverter.BeatToBeatArray(beat),
-                            value = judgeline.EventLayers.GetAlphaAtBeat(beat),
-                            continuous = judgeline.EventLayers.HasAlphaEventAtBeat(beat - Precision),
-                            easing = 0
+                            Beat = BeatConverter.RestoreArray(beat),
+                            Value = judgeline.EventLayers.GetAlphaAtBeat(beat),
+                            Continuous = judgeline.EventLayers.HasAlphaEventAtBeat(beat - Precision),
+                            Easing = 0
                         };
-                        lineItem.props.alpha.Add(phiEventFrame);
+                        lineItem.Props.Alpha.Add(phiEventFrame);
                     }
 
                     // Rotate
@@ -269,12 +271,12 @@ public static class Converters
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = BeatConverter.BeatToBeatArray(beat),
-                            value = judgeline.EventLayers.GetAngleAtBeat(beat),
-                            continuous = judgeline.EventLayers.HasAngleEventAtBeat(beat - Precision),
-                            easing = 0
+                            Beat = BeatConverter.RestoreArray(beat),
+                            Value = judgeline.EventLayers.GetAngleAtBeat(beat),
+                            Continuous = judgeline.EventLayers.HasAngleEventAtBeat(beat - Precision),
+                            Easing = 0
                         };
-                        lineItem.props.rotate.Add(phiEventFrame);
+                        lineItem.Props.Rotate.Add(phiEventFrame);
                     }
 
                     // X & Y
@@ -292,59 +294,59 @@ public static class Converters
                         // X
                         var phiEventFrameX = new PhiFansObject.EventItem
                         {
-                            beat = BeatConverter.BeatToBeatArray(beat),
-                            value = RePhiEdit.TransformX(position.Item1),
-                            continuous = lastHasEvent,
-                            easing = 0
+                            Beat = BeatConverter.RestoreArray(beat),
+                            Value = RePhiEdit.TransformX(position.Item1),
+                            Continuous = lastHasEvent,
+                            Easing = 0
                         };
                         // Y
                         var phiEventFrameY = new PhiFansObject.EventItem
                         {
-                            beat = BeatConverter.BeatToBeatArray(beat),
-                            value = RePhiEdit.TransformY(position.Item2),
-                            continuous = lastHasEvent,
-                            easing = 0
+                            Beat = BeatConverter.RestoreArray(beat),
+                            Value = RePhiEdit.TransformY(position.Item2),
+                            Continuous = lastHasEvent,
+                            Easing = 0
                         };
-                        lineItem.props.positionX.Add(phiEventFrameX);
-                        lineItem.props.positionY.Add(phiEventFrameY);
+                        lineItem.Props.PositionX.Add(phiEventFrameX);
+                        lineItem.Props.PositionY.Add(phiEventFrameY);
                     }
                 }
 
                 // Speed
                 foreach (var eventItem in judgeline.EventLayers[0].SpeedEvents)
                 {
-                    if (eventItem.Start == eventItem.End)
+                    if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = eventItem.StartTime.Array,
-                            value = eventItem.Start / SpeedRatio,
-                            continuous = false,
-                            easing = 0
+                            Beat = eventItem.StartTime,
+                            Value = eventItem.Start / SpeedRatio,
+                            Continuous = false,
+                            Easing = 0
                         };
-                        lineItem.props.speed.Add(phiEventFrame);
+                        lineItem.Props.Speed.Add(phiEventFrame);
                         continue;
                     }
 
                     var phiEventStart = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.StartTime.Array,
-                        value = eventItem.Start / SpeedRatio,
-                        continuous = false,
-                        easing = 0
+                        Beat = eventItem.StartTime,
+                        Value = eventItem.Start / SpeedRatio,
+                        Continuous = false,
+                        Easing = 0
                     };
                     var phiEventEnd = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.EndTime.Array,
-                        value = eventItem.End / SpeedRatio,
-                        continuous = true,
-                        easing = 0
+                        Beat = eventItem.EndTime,
+                        Value = eventItem.End / SpeedRatio,
+                        Continuous = true,
+                        Easing = 0
                     };
-                    lineItem.props.speed.Add(phiEventStart);
-                    lineItem.props.speed.Add(phiEventEnd);
+                    lineItem.Props.Speed.Add(phiEventStart);
+                    lineItem.Props.Speed.Add(phiEventEnd);
                 }
 
-                phiFansChart.lines.Add(lineItem);
+                phiFansChart.Lines.Add(lineItem);
                 continue;
             }
 
@@ -352,171 +354,171 @@ public static class Converters
             {
                 foreach (var eventItem in layer.AlphaEvents)
                 {
-                    if (eventItem.Start == eventItem.End)
+                    if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = eventItem.StartTime.Array,
-                            value = eventItem.Start,
-                            continuous = false,
-                            easing = 0
+                            Beat = eventItem.StartTime,
+                            Value = eventItem.Start,
+                            Continuous = false,
+                            Easing = 0
                         };
-                        lineItem.props.alpha.Add(phiEventFrame);
+                        lineItem.Props.Alpha.Add(phiEventFrame);
                         continue;
                     }
 
                     var phiEventStart = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.StartTime.Array,
-                        value = eventItem.Start,
-                        continuous = false,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.StartTime,
+                        Value = eventItem.Start,
+                        Continuous = false,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
                     var phiEventEnd = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.EndTime.Array,
-                        value = eventItem.End,
-                        continuous = true,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.EndTime,
+                        Value = eventItem.End,
+                        Continuous = true,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
-                    lineItem.props.alpha.Add(phiEventStart);
-                    lineItem.props.alpha.Add(phiEventEnd);
+                    lineItem.Props.Alpha.Add(phiEventStart);
+                    lineItem.Props.Alpha.Add(phiEventEnd);
                 }
 
                 foreach (var eventItem in layer.MoveXEvents)
                 {
-                    if (eventItem.Start == eventItem.End)
+                    if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = eventItem.StartTime.Array,
-                            value = RePhiEdit.TransformX(eventItem.Start),
-                            continuous = false,
-                            easing = 0
+                            Beat = eventItem.StartTime,
+                            Value = RePhiEdit.TransformX(eventItem.Start),
+                            Continuous = false,
+                            Easing = 0
                         };
-                        lineItem.props.positionX.Add(phiEventFrame);
+                        lineItem.Props.PositionX.Add(phiEventFrame);
                         continue;
                     }
 
                     var phiEventStart = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.StartTime.Array,
-                        value = RePhiEdit.TransformX(eventItem.Start),
-                        continuous = false,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.StartTime,
+                        Value = RePhiEdit.TransformX(eventItem.Start),
+                        Continuous = false,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
                     var phiEventEnd = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.EndTime.Array,
-                        value = RePhiEdit.TransformX(eventItem.End),
-                        continuous = true,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.EndTime,
+                        Value = RePhiEdit.TransformX(eventItem.End),
+                        Continuous = true,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
-                    lineItem.props.positionX.Add(phiEventStart);
-                    lineItem.props.positionX.Add(phiEventEnd);
+                    lineItem.Props.PositionX.Add(phiEventStart);
+                    lineItem.Props.PositionX.Add(phiEventEnd);
                 }
 
                 foreach (var eventItem in layer.MoveYEvents)
                 {
-                    if (eventItem.Start == eventItem.End)
+                    if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = eventItem.StartTime.Array,
-                            value = RePhiEdit.TransformY(eventItem.Start),
-                            continuous = false,
-                            easing = 0
+                            Beat = eventItem.StartTime,
+                            Value = RePhiEdit.TransformY(eventItem.Start),
+                            Continuous = false,
+                            Easing = 0
                         };
-                        lineItem.props.positionY.Add(phiEventFrame);
+                        lineItem.Props.PositionY.Add(phiEventFrame);
                         continue;
                     }
 
                     var phiEventStart = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.StartTime.Array,
-                        value = RePhiEdit.TransformY(eventItem.Start),
-                        continuous = false,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.StartTime,
+                        Value = RePhiEdit.TransformY(eventItem.Start),
+                        Continuous = false,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
                     var phiEventEnd = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.EndTime.Array,
-                        value = RePhiEdit.TransformY(eventItem.End),
-                        continuous = true,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.EndTime,
+                        Value = RePhiEdit.TransformY(eventItem.End),
+                        Continuous = true,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
-                    lineItem.props.positionY.Add(phiEventStart);
-                    lineItem.props.positionY.Add(phiEventEnd);
+                    lineItem.Props.PositionY.Add(phiEventStart);
+                    lineItem.Props.PositionY.Add(phiEventEnd);
                 }
 
                 foreach (var eventItem in layer.RotateEvents)
                 {
-                    if (eventItem.Start == eventItem.End)
+                    if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = eventItem.StartTime.Array,
-                            value = eventItem.Start,
-                            continuous = false,
-                            easing = 0
+                            Beat = eventItem.StartTime,
+                            Value = eventItem.Start,
+                            Continuous = false,
+                            Easing = 0
                         };
-                        lineItem.props.rotate.Add(phiEventFrame);
+                        lineItem.Props.Rotate.Add(phiEventFrame);
                         continue;
                     }
 
                     var phiEventStart = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.StartTime.Array,
-                        value = eventItem.Start,
-                        continuous = false,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.StartTime,
+                        Value = eventItem.Start,
+                        Continuous = false,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
                     var phiEventEnd = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.EndTime.Array,
-                        value = eventItem.End,
-                        continuous = true,
-                        easing = PhiFans.EasingNumber(eventItem.EasingType)
+                        Beat = eventItem.EndTime,
+                        Value = eventItem.End,
+                        Continuous = true,
+                        Easing = PhiFans.EasingNumber(eventItem.EasingType)
                     };
-                    lineItem.props.rotate.Add(phiEventStart);
-                    lineItem.props.rotate.Add(phiEventEnd);
+                    lineItem.Props.Rotate.Add(phiEventStart);
+                    lineItem.Props.Rotate.Add(phiEventEnd);
                 }
 
                 foreach (var eventItem in layer.SpeedEvents)
                 {
-                    if (eventItem.Start == eventItem.End)
+                    if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            beat = eventItem.StartTime.Array,
-                            value = eventItem.Start / SpeedRatio,
-                            continuous = false,
-                            easing = 0
+                            Beat = eventItem.StartTime,
+                            Value = eventItem.Start / SpeedRatio,
+                            Continuous = false,
+                            Easing = 0
                         };
-                        lineItem.props.speed.Add(phiEventFrame);
+                        lineItem.Props.Speed.Add(phiEventFrame);
                         continue;
                     }
 
                     var phiEventStart = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.StartTime.Array,
-                        value = eventItem.Start / SpeedRatio,
-                        continuous = false,
-                        easing = 0
+                        Beat = eventItem.StartTime,
+                        Value = eventItem.Start / SpeedRatio,
+                        Continuous = false,
+                        Easing = 0
                     };
                     var phiEventEnd = new PhiFansObject.EventItem
                     {
-                        beat = eventItem.EndTime.Array,
-                        value = eventItem.End / SpeedRatio,
-                        continuous = true,
-                        easing = 0
+                        Beat = eventItem.EndTime,
+                        Value = eventItem.End / SpeedRatio,
+                        Continuous = true,
+                        Easing = 0
                     };
-                    lineItem.props.speed.Add(phiEventStart);
-                    lineItem.props.speed.Add(phiEventEnd);
+                    lineItem.Props.Speed.Add(phiEventStart);
+                    lineItem.Props.Speed.Add(phiEventEnd);
                 }
             }
 
-            phiFansChart.lines.Add(lineItem);
+            phiFansChart.Lines.Add(lineItem);
         }
 
         return phiFansChart;
@@ -670,17 +672,5 @@ public static class Converters
             return result;
         }
     }
-
-    /// <summary>
-    /// Convert int[] to RePhiEdit Beat
-    /// </summary>
-    /// <param name="array">Any array</param>
-    /// <returns>RePhiEdit Beat</returns>
-    private static Beat IntArrayToBeat(int[] array)
-    {
-        if (array.Length != 3)
-            throw new ArgumentException("Array length must be 3");
-        var beat = new Beat(array);
-        return beat;
-    }
+    
 }

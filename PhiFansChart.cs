@@ -1,64 +1,75 @@
 ﻿using Newtonsoft.Json;
 using static PhiFansConverter.PhiFansObject;
+
 namespace PhiFansConverter;
 
 public class PhiFansChart
 {
-    public Info info;
-    public int offset = 0;
-    public List<BpmItem> bpm = new();
-    public List<LineItem> lines = new();
+    [JsonProperty("info")]
+    public Info Info = new();
+    [JsonProperty("offset")]
+    public int Offset;
+    [JsonProperty("bpm")]
+    public List<BpmItem> Bpm = [];
+    [JsonProperty("lines")]
+    public List<LineItem> Lines = [];
 }
 
 public static class PhiFansObject
 {
     [JsonObject]
-    public class BpmItem()
+    public class BpmItem
     {
-        public int[] beat = new int[3];
-        public float bpm = 120;
+        [JsonProperty("beat")]
+        public int[] Beat = new int[3];
+        [JsonProperty("bpm")]
+        public float Bpm = 120;
     }
+
     [JsonObject]
     public class Info
     {
-        public string name;        // 曲名
-        public string artist;      // 曲师
-        public string illustration;// 插画
-        public string level;       // 等级
-        public string designer;    // 谱师
+        [JsonProperty("name")] public string Name = ""; // 曲名
+        [JsonProperty("artist")] public string Artist = ""; // 曲师
+        [JsonProperty("illustration")] public string Illustration = ""; // 插画
+        [JsonProperty("level")] public string Level = ""; // 等级
+        [JsonProperty("designer")] public string Designer = ""; // 谱师
     }
+
     [JsonObject]
-    public class LineItem()
+    public class LineItem
     {
-        public PropsObject props = new();
-        public List<Note> notes = new();
+        [JsonProperty("props")] public PropsObject Props = new();
+        [JsonProperty("notes")] public List<Note> Notes = [];
     }
+
     [JsonObject]
-    public class EventItem()
+    public class EventItem
     {
-        public int[] beat = new int[3];
-        public float value = 0;
-        public bool continuous = false;
-        public int easing = 0;
+        [JsonProperty("beat")] public int[] Beat = new int[3];
+        [JsonProperty("value")] public float Value;
+        [JsonProperty("continuous")] public bool Continuous;
+        [JsonProperty("easing")] public int Easing;
     }
+
     [JsonObject]
     public class Note
     {
-        public int type = 1;
-        public int[] beat = new int[3];
-        public float positionX;
-        public float speed;
-        public bool isAbove = true;
-        public int[] holdEndBeat = new int[3];
+        [JsonProperty("type")] public int Type = 1;
+        [JsonProperty("beat")] public int[] Beat = new int[3];
+        [JsonProperty("positionX")] public float PositionX;
+        [JsonProperty("speed")] public float Speed;
+        [JsonProperty("isAbove")] public bool IsAbove = true;
+        [JsonProperty("holdEndBeat")] public int[] HoldEndBeat = new int[3];
     }
+
     [JsonObject]
-    public class PropsObject()
+    public class PropsObject
     {
-        public List<EventItem> speed = new();
-        public List<EventItem> positionX = new();
-        public List<EventItem> positionY = new();
-        public List<EventItem> rotate = new();
-        public List<EventItem> alpha = new();
+        [JsonProperty("speed")] public List<EventItem> Speed = [];
+        [JsonProperty("positionX")] public List<EventItem> PositionX = [];
+        [JsonProperty("positionY")] public List<EventItem> PositionY = [];
+        [JsonProperty("rotate")] public List<EventItem> Rotate = [];
+        [JsonProperty("alpha")] public List<EventItem> Alpha = [];
     }
-    
 }

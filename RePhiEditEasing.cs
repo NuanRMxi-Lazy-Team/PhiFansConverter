@@ -3,7 +3,7 @@
 public static class Easing
 {
     // Delegate for easing functions
-    public delegate double EasingFunction(double t);
+    private delegate double EasingFunction(double t);
 
     // Linear
     private static double Linear(double t) => t;
@@ -66,11 +66,11 @@ public static class Easing
         t == 0 ? 0 : Math.Pow(2, 10 * (t - 1));
 
     private static double EaseOutExpo(double t) =>
-        t == 1 ? 1 : 1 - Math.Pow(2, -10 * t);
+        Math.Abs(t - 1) < 1e-10 ? 1 : 1 - Math.Pow(2, -10 * t);
 
     private static double EaseInOutExpo(double t)
     {
-        if (t == 0 || t == 1) return t;
+        if (t == 0 || Math.Abs(t - 1) < 1e-10) return t;
         return t < 0.5f
             ? 0.5f * Math.Pow(2, 20 * t - 10)
             : 1 - 0.5f * Math.Pow(2, -20 * t + 10);
@@ -115,21 +115,21 @@ public static class Easing
     // Elastic
     private static double EaseInElastic(double t)
     {
-        if (t == 0 || t == 1) return t;
+        if (t == 0 || Math.Abs(t - 1) < 1e-10) return t;
         return -Math.Pow(2, 10 * (t - 1)) *
                Math.Sin((t - 1.1f) * 5 * Math.PI);
     }
 
     private static double EaseOutElastic(double t)
     {
-        if (t == 0 || t == 1) return t;
+        if (t == 0 || Math.Abs(t - 1) < 1e-10) return t;
         return Math.Pow(2, -10 * t) *
             Math.Sin((t - 0.1f) * 5 * Math.PI) + 1;
     }
 
     private static double EaseInOutElastic(double t)
     {
-        if (t == 0 || t == 1) return t;
+        if (t == 0 || Math.Abs(t - 1) < 1e-10) return t;
         t *= 2;
         if (t < 1)
             return -0.5f * Math.Pow(2, 10 * (t - 1)) *

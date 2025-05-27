@@ -13,33 +13,32 @@ public struct RpeChart
         JudgeLineList = [];
     }
 
-    [JsonProperty("BPMList")] public static List<RePhiEditObject.RpeBpm> BpmList;
+    [JsonProperty("BPMList")] public List<RePhiEditObject.RpeBpm> BpmList = [];
 
-    [JsonIgnore]
+/*
+    [JsonProperty(nameof(BpmList))]
     public List<RePhiEditObject.RpeBpm> bpmlist
     {
         set => BpmList = value;
         get => BpmList;
     }
-
+*/
     [JsonProperty("META")] public RePhiEditObject.Meta Meta;
     [JsonProperty("judgeLineList")] public RePhiEditObject.JudgeLineList JudgeLineList;
 }
 
-public static class RePhiEditObject
+public static partial class RePhiEditObject
 {
-    private const float RpeSpeedToOfficial = 4.5f; // RPE速度转换为官谱速度的比例
+    // private const float RpeSpeedToOfficial = 4.5f; // RPE速度转换为官谱速度的比例
 
     [JsonConverter(typeof(BeatJsonConverter))]
     public struct Beat
     {
-        private int[] _beat;
-        private float? _time;
+        private readonly int[] _beat;
 
-        public Beat(int[]? timeArray = null)
+        public Beat(int[]? beatArray = null)
         {
-            _beat = timeArray ?? new[] { 0, 0, 1 };
-            _time = null;
+            _beat = beatArray ?? [0, 0, 1];
         }
 
         // 存储单个拍的时间，格式为 [0]:[1]/[2]
@@ -59,12 +58,22 @@ public static class RePhiEditObject
             }
         }
 
-        public float CurBeat => (float)this[1] / this[2] + this[0];
+        [Obsolete("请直接赋值给float或double类型")] public float CurBeat => (float)this[1] / this[2] + this[0];
 
+        [Obsolete("请直接赋值给int[]类型")]
         public int[] Array
         {
             get => _beat;
         }
+
+        // 隐式转换为 float，返回 CurBeat
+        public static implicit operator float(Beat beat) => (float)beat[1] / beat[2] + beat[0];
+
+        // 隐式转换为 double，返回 CurBeat
+        public static implicit operator double(Beat beat) => (double)beat[1] / beat[2] + beat[0];
+
+        // 隐式转换为 int[]，返回 _beat
+        public static implicit operator int[](Beat beat) => beat._beat;
     }
 
     /// <summary>
@@ -121,8 +130,9 @@ public static class RePhiEditObject
                 x = 9999999.0
             }
         ]; // 透明度控制
-        
+
         [JsonProperty("extended")] public readonly object Extended = new(); // 扩展数据
+
         [JsonProperty("posControl")] public readonly object[] PosControl =
         [
             new
@@ -138,6 +148,7 @@ public static class RePhiEditObject
                 x = 9999999.0
             }
         ];
+
         [JsonProperty("sizeControl")] public readonly object[] SizeControl =
         [
             new
@@ -153,6 +164,7 @@ public static class RePhiEditObject
                 x = 9999999.0
             }
         ];
+
         [JsonProperty("skewControl")] public readonly object[] SkewControl =
         [
             new
@@ -168,6 +180,7 @@ public static class RePhiEditObject
                 x = 9999999.0
             }
         ];
+
         [JsonProperty("yControl")] public readonly object[] YControl =
         [
             new
@@ -185,51 +198,6 @@ public static class RePhiEditObject
         ];
     }
 
-    public class JudgeLineList : List<JudgeLine>
-    {
-        public (float, float) GetLinePosition(int index, float beat)
-        {
-            // 在没有父线的情况下直接返回
-            if (this[index].Father == -1)
-                return (this[index].EventLayers.GetXAtBeat(beat), this[index].EventLayers.GetYAtBeat(beat));
-
-            int fatherIndex = this[index].Father;
-            // 获取父线位置
-            var (fatherX, fatherY) = GetLinePosition(fatherIndex, beat);
-
-            // 获取当前线相对于父线的偏移量
-            float offsetX = this[index].EventLayers.GetXAtBeat(beat);
-            float offsetY = this[index].EventLayers.GetYAtBeat(beat);
-
-            // 获取父线的角度并转换为弧度
-            float angleDegrees = -this[fatherIndex].EventLayers.GetAngleAtBeat(beat);
-            var angleRadians = (angleDegrees % 360 + 360) % 360 * Math.PI / 180f;
-
-            // 对偏移量进行旋转
-            float rotatedOffsetX = (float)(offsetX * Math.Cos(angleRadians) - offsetY * Math.Sin(angleRadians));
-            float rotatedOffsetY = (float)(offsetX * Math.Sin(angleRadians) + offsetY * Math.Cos(angleRadians));
-
-            // 最后加上父线的位置得到最终位置
-            return (fatherX + rotatedOffsetX, fatherY + rotatedOffsetY);
-        }
-
-        public bool FatherAndTheLineHasXyEvent(int index, float beat)
-        {
-            // 递归计算，先判断是否有父线，如果有，递归
-            if (this[index].Father != -1)
-            {
-                return FatherAndTheLineHasXyEvent(this[index].Father, beat) ||
-                       this[index].EventLayers.HasXEventAtBeat(beat) ||
-                       this[index].EventLayers.HasYEventAtBeat(beat);
-            }
-            else
-            {
-                return this[index].EventLayers.HasXEventAtBeat(beat) || this[index].EventLayers.HasYEventAtBeat(beat);
-            }
-        }
-    }
-
-
     /// <summary>
     /// 单个事件层
     /// </summary>
@@ -239,7 +207,7 @@ public static class RePhiEditObject
         [JsonProperty("moveYEvents")] public EventList MoveYEvents = []; // 移动事件
         [JsonProperty("rotateEvents")] public EventList RotateEvents = []; // 旋转事件
         [JsonProperty("alphaEvents")] public EventList AlphaEvents = []; // 透明度事件
-        [JsonProperty("speedEvents")] public SpeedEventList SpeedEvents = []; // 速度事件
+        [JsonProperty("speedEvents")] public EventList SpeedEvents = []; // 速度事件
     }
 
     /// <summary>
@@ -298,7 +266,7 @@ public static class RePhiEditObject
     /// <summary>
     /// 普通事件
     /// </summary>
-    public class Event
+    public partial class Event
     {
         [JsonProperty("bezier")] public int Bezier; // 是否为贝塞尔曲线
         [JsonProperty("bezierPoints")] public float[] BezierPoints = new float[4]; // 贝塞尔曲线点
@@ -309,64 +277,14 @@ public static class RePhiEditObject
         [JsonProperty("end")] public float End; // 结束值
         [JsonProperty("startTime")] public Beat StartTime; // 开始时间
         [JsonProperty("endTime")] public Beat EndTime; // 结束时间
-
-        public float GetValueAtBeat(float beat)
-        {
-            float startTime = StartTime.CurBeat;
-            float endTime = EndTime.CurBeat;
-            //获得这个拍在这个事件的时间轴上的位置
-            float t = (beat - startTime) / (endTime - startTime);
-            //获得当前拍的值
-            var easedTime = Easing.Evaluate(EasingType, EasingLeft, EasingRight, t);
-            //插值
-            return Mathf.LerpUnclamped(Start, End, (float)easedTime);
-        }
     }
 
-    public class EventList : List<Event>
-    {
-        private int _lastIndex;
-
-        public float GetValueAtBeat(float beat)
-        {
-            for (int i = _lastIndex; i < Count; i++)
-            {
-                var e = this[i];
-                if (beat >= e.StartTime.CurBeat && beat <= e.EndTime.CurBeat)
-                {
-                    _lastIndex = i;
-                    return e.GetValueAtBeat(beat);
-                }
-
-                if (beat < e.StartTime.CurBeat)
-                {
-                    break;
-                }
-            }
-
-            var previousEvent = FindLast(e => beat > e.EndTime.CurBeat);
-            return previousEvent?.End ?? 0;
-        }
-
-        public bool HasEventAtBeat(float beat)
-        {
-            // 如果有事件在这个拍上，返回true
-            return this.Any(e => beat >= e.StartTime.CurBeat && beat <= e.EndTime.CurBeat);
-        }
-
-        // 最后一个事件的结束拍
-        public float LastEventEndBeat()
-        {
-            if (Count == 0) return 0;
-
-            return this.Last().EndTime.CurBeat;
-        }
-    }
-
+    [Obsolete("不应再使用SpeedEventList类，请使用EventList类")]
     public class SpeedEventList : List<SpeedEvent>
     {
     }
 
+    [Obsolete("不应再使用SpeedEvent类，请使用Event类")]
     public class SpeedEvent : Event
     {
         //public float FloorPosition;
@@ -378,8 +296,8 @@ public static class RePhiEditObject
         public Note(bool init = true)
         {
             if (!init) throw new Exception("init must be true");
-            StartTime = new();
-            EndTime = new();
+            StartTime = new Beat();
+            EndTime = new Beat();
             Alpha = 255;
             Above = 1;
             IsFake = 0;
@@ -399,7 +317,7 @@ public static class RePhiEditObject
         [JsonProperty("isFake")] public int IsFake; // 是否为假note（1为假note，0为真note）
         [JsonProperty("positionX")] public float PositionX; // X坐标
         [JsonProperty("size")] public float Size; // 宽度倍率
-        [JsonProperty("speed")] public float SpeedMultiplier; // 速度倍率
+        [JsonProperty("Speed")] public float SpeedMultiplier; // 速度倍率
         [JsonProperty("type")] public int Type; // 类型（1 为 Tap、2 为 Hold、3 为 Flick、4 为 Drag）
         [JsonProperty("visibleTime")] public float VisibleTime; // 可见时间（单位为秒）
         [JsonProperty("yOffset")] public float YOffset; // Y偏移
@@ -415,7 +333,7 @@ public class BeatJsonConverter : JsonConverter<RePhiEditObject.Beat>
         RePhiEditObject.Beat existingValue,
         bool hasExistingValue, JsonSerializer serializer)
     {
-        JArray array = JArray.Load(reader);
+        var array = JArray.Load(reader);
         return new RePhiEditObject.Beat(array.ToObject<int[]>());
     }
 
@@ -441,58 +359,43 @@ public static class Mathf
 
 public static class BeatConverter
 {
-    public static int[] BeatToBeatArray(float beat)
+    [Obsolete("请使用RestoreArray方法")]
+    public static int[] BeatToBeatArray(double beat)
     {
-        int RPEBeat0 = (int)Math.Floor(beat);
-        double fractionalPart = beat - RPEBeat0;
-        int maxDenominator = 10000;
-        int RPEBeat1, RPEBeat2;
-
-        FractionalApproximation(fractionalPart, maxDenominator, out RPEBeat1, out RPEBeat2);
-
-        return new[] { RPEBeat0, RPEBeat1, RPEBeat2 };
+        return RestoreArray(beat);
     }
 
-    private static void FractionalApproximation(double x, int maxDenominator, out int numerator, out int denominator)
+    public static int[] RestoreArray(double result, int maxA2 = 10000, double epsilon = 1e-6)
     {
-        if (x == 0)
+        int[] best = null;
+        int minSum = int.MaxValue;
+
+        // 枚举 array[2]，即分母，从小到大（更可能找到“最简”的组合）
+        for (int a2 = 1; a2 <= maxA2; a2++)
         {
-            numerator = 0;
-            denominator = 1;
-            return;
+            // a1 = (result - a0) * a2 -> 推导成：a1 = result * a2 - a0 * a2
+            double a1Raw = result * a2;
+            int a1 = (int)Math.Round(a1Raw);
+
+            // 推回 a0
+            double a0Raw = (a1Raw - a1) == 0 ? result - ((double)a1 / a2) : -1;
+            if (a0Raw < 0 || a0Raw % 1 != 0) continue;
+
+            int a0 = (int)Math.Round(a0Raw);
+            if (a0 < 0 || a0 > result) continue;
+
+            if (Math.Abs((a1 / (double)a2) + a0 - result) < epsilon)
+            {
+                int sum = a0 + a1 + a2;
+                if (sum < minSum)
+                {
+                    minSum = sum;
+                    best = new int[] { a0, a1, a2 };
+                    if (sum == result + 1) break; // 已经最简（例如 result=351 → [351,0,1]）
+                }
+            }
         }
 
-        int sign = x < 0 ? -1 : 1;
-        x = Math.Abs(x);
-
-        int n = 0, d = 1;
-        int n1 = 1, d1 = 0;
-        int n2 = 0, d2 = 1;
-
-        double fraction = x;
-        while (d <= maxDenominator)
-        {
-            int a = (int)Math.Floor(fraction);
-            double newFraction = fraction - a;
-
-            n = a * n1 + n2;
-            d = a * d1 + d2;
-
-            if (d > maxDenominator)
-                break;
-
-            n2 = n1;
-            d2 = d1;
-            n1 = n;
-            d1 = d;
-
-            if (newFraction < 1e-10)
-                break;
-
-            fraction = 1.0 / newFraction;
-        }
-
-        numerator = n * sign;
-        denominator = d;
+        return best;
     }
 }
