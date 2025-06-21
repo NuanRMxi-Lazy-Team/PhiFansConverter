@@ -370,12 +370,12 @@ public static class Converters
 
                 phiFansChart.Lines.Add(lineItem);
                 
-                // 清理缓存以释放内存
-                chart.JudgeLineList.ClearCache();
-                judgeline.EventLayers.ClearCache();
                 continue;
             }
 
+            // 清理缓存以释放内存
+            chart.JudgeLineList.ClearCache();
+            judgeline.EventLayers.ClearCache();
             // 处理简单事件层，优化对象创建
             var simpleAlphaEvents = new List<PhiFansObject.EventItem>();
             var simpleMoveXEvents = new List<PhiFansObject.EventItem>();
