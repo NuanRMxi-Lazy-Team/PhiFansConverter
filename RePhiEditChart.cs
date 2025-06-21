@@ -215,51 +215,179 @@ public static partial class RePhiEditObject
     /// </summary>
     public class EventLayers : List<EventLayer>
     {
+        private readonly Dictionary<float, float> _xCache = new();
+        private readonly Dictionary<float, float> _yCache = new();
+        private readonly Dictionary<float, float> _angleCache = new();
+        private readonly Dictionary<float, float> _alphaCache = new();
+        private readonly Dictionary<float, bool> _hasXEventCache = new();
+        private readonly Dictionary<float, bool> _hasYEventCache = new();
+        private readonly Dictionary<float, bool> _hasAngleEventCache = new();
+        private readonly Dictionary<float, bool> _hasAlphaEventCache = new();
+
+        private float? _lastEventEndBeat;
+        private float? _lastXEventEndBeat;
+        private float? _lastYEventEndBeat;
+        private float? _lastAngleEventEndBeat;
+        private float? _lastAlphaEventEndBeat;
+
         public float LastEventEndBeat()
         {
+            if (_lastEventEndBeat.HasValue)
+                return _lastEventEndBeat.Value;
+
             // 求下面所有事件种类的最后一个事件的结束拍，返回最大值
             float x = LastXEventEndBeat;
             float y = LastYEventEndBeat;
             float angle = LastAngleEventEndBeat;
             float alpha = LastAlphaEventEndBeat;
-            return Math.Max(x, Math.Max(y, Math.Max(angle, alpha)));
+            _lastEventEndBeat = Math.Max(x, Math.Max(y, Math.Max(angle, alpha)));
+            return _lastEventEndBeat.Value;
         }
 
-        public float GetXAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.MoveXEvents.GetValueAtBeat(t));
+        public float GetXAtBeat(float t)
+        {
+            if (_xCache.TryGetValue(t, out var cachedValue))
+                return cachedValue;
 
-        public bool HasXEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.MoveXEvents.HasEventAtBeat(beat));
+            var result = this.Sum(eventLayer => eventLayer.MoveXEvents.GetValueAtBeat(t));
+            _xCache[t] = result;
+            return result;
+        }
 
-        public float LastXEventEndBeat =>
-            this.Max(eventLayer => eventLayer.MoveXEvents.LastEventEndBeat());
+        public bool HasXEventAtBeat(float beat)
+        {
+            if (_hasXEventCache.TryGetValue(beat, out var cachedValue))
+                return cachedValue;
 
-        public float GetYAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.MoveYEvents.GetValueAtBeat(t));
+            var result = this.Any(eventLayer => eventLayer.MoveXEvents.HasEventAtBeat(beat));
+            _hasXEventCache[beat] = result;
+            return result;
+        }
 
-        public bool HasYEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.MoveYEvents.HasEventAtBeat(beat));
+        public float LastXEventEndBeat
+        {
+            get
+            {
+                if (_lastXEventEndBeat.HasValue)
+                    return _lastXEventEndBeat.Value;
 
-        public float LastYEventEndBeat =>
-            this.Max(eventLayer => eventLayer.MoveYEvents.LastEventEndBeat());
+                _lastXEventEndBeat = Count > 0 ? this.Max(eventLayer => eventLayer.MoveXEvents.LastEventEndBeat()) : 0;
+                return _lastXEventEndBeat.Value;
+            }
+        }
 
-        public float GetAngleAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.RotateEvents.GetValueAtBeat(t));
+        public float GetYAtBeat(float t)
+        {
+            if (_yCache.TryGetValue(t, out var cachedValue))
+                return cachedValue;
 
-        public bool HasAngleEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.RotateEvents.HasEventAtBeat(beat));
+            var result = this.Sum(eventLayer => eventLayer.MoveYEvents.GetValueAtBeat(t));
+            _yCache[t] = result;
+            return result;
+        }
 
-        public float LastAngleEventEndBeat =>
-            this.Max(eventLayer => eventLayer.RotateEvents.LastEventEndBeat());
+        public bool HasYEventAtBeat(float beat)
+        {
+            if (_hasYEventCache.TryGetValue(beat, out var cachedValue))
+                return cachedValue;
 
-        public float GetAlphaAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.AlphaEvents.GetValueAtBeat(t));
+            var result = this.Any(eventLayer => eventLayer.MoveYEvents.HasEventAtBeat(beat));
+            _hasYEventCache[beat] = result;
+            return result;
+        }
 
-        public bool HasAlphaEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.AlphaEvents.HasEventAtBeat(beat));
+        public float LastYEventEndBeat
+        {
+            get
+            {
+                if (_lastYEventEndBeat.HasValue)
+                    return _lastYEventEndBeat.Value;
 
-        public float LastAlphaEventEndBeat =>
-            this.Max(eventLayer => eventLayer.AlphaEvents.LastEventEndBeat());
+                _lastYEventEndBeat = Count > 0 ? this.Max(eventLayer => eventLayer.MoveYEvents.LastEventEndBeat()) : 0;
+                return _lastYEventEndBeat.Value;
+            }
+        }
+
+        public float GetAngleAtBeat(float t)
+        {
+            if (_angleCache.TryGetValue(t, out var cachedValue))
+                return cachedValue;
+
+            var result = this.Sum(eventLayer => eventLayer.RotateEvents.GetValueAtBeat(t));
+            _angleCache[t] = result;
+            return result;
+        }
+
+        public bool HasAngleEventAtBeat(float beat)
+        {
+            if (_hasAngleEventCache.TryGetValue(beat, out var cachedValue))
+                return cachedValue;
+
+            var result = this.Any(eventLayer => eventLayer.RotateEvents.HasEventAtBeat(beat));
+            _hasAngleEventCache[beat] = result;
+            return result;
+        }
+
+        public float LastAngleEventEndBeat
+        {
+            get
+            {
+                if (_lastAngleEventEndBeat.HasValue)
+                    return _lastAngleEventEndBeat.Value;
+
+                _lastAngleEventEndBeat = Count > 0 ? this.Max(eventLayer => eventLayer.RotateEvents.LastEventEndBeat()) : 0;
+                return _lastAngleEventEndBeat.Value;
+            }
+        }
+
+        public float GetAlphaAtBeat(float t)
+        {
+            if (_alphaCache.TryGetValue(t, out var cachedValue))
+                return cachedValue;
+
+            var result = this.Sum(eventLayer => eventLayer.AlphaEvents.GetValueAtBeat(t));
+            _alphaCache[t] = result;
+            return result;
+        }
+
+        public bool HasAlphaEventAtBeat(float beat)
+        {
+            if (_hasAlphaEventCache.TryGetValue(beat, out var cachedValue))
+                return cachedValue;
+
+            var result = this.Any(eventLayer => eventLayer.AlphaEvents.HasEventAtBeat(beat));
+            _hasAlphaEventCache[beat] = result;
+            return result;
+        }
+
+        public float LastAlphaEventEndBeat
+        {
+            get
+            {
+                if (_lastAlphaEventEndBeat.HasValue)
+                    return _lastAlphaEventEndBeat.Value;
+
+                _lastAlphaEventEndBeat = Count > 0 ? this.Max(eventLayer => eventLayer.AlphaEvents.LastEventEndBeat()) : 0;
+                return _lastAlphaEventEndBeat.Value;
+            }
+        }
+
+        public void ClearCache()
+        {
+            _xCache.Clear();
+            _yCache.Clear();
+            _angleCache.Clear();
+            _alphaCache.Clear();
+            _hasXEventCache.Clear();
+            _hasYEventCache.Clear();
+            _hasAngleEventCache.Clear();
+            _hasAlphaEventCache.Clear();
+            _lastEventEndBeat = null;
+            _lastXEventEndBeat = null;
+            _lastYEventEndBeat = null;
+            _lastAngleEventEndBeat = null;
+            _lastAlphaEventEndBeat = null;
+        }
     }
 
 
@@ -367,8 +495,9 @@ public static class BeatConverter
 
     public static int[] RestoreArray(double result, int maxA2 = 10000, double epsilon = 1e-6)
     {
-        int[] best = null;
+        int[] best = new int[3];
         int minSum = int.MaxValue;
+        bool found = false;
 
         // 枚举 array[2]，即分母，从小到大（更可能找到“最简”的组合）
         for (int a2 = 1; a2 <= maxA2; a2++)
@@ -390,12 +519,74 @@ public static class BeatConverter
                 if (sum < minSum)
                 {
                     minSum = sum;
-                    best = new int[] { a0, a1, a2 };
+                    best[0] = a0;
+                    best[1] = a1;
+                    best[2] = a2;
+                    found = true;
                     if (sum == result + 1) break; // 已经最简（例如 result=351 → [351,0,1]）
                 }
             }
         }
 
+        if (!found)
+        {
+            best[0] = 0;
+            best[1] = 0;
+            best[2] = 1;
+        }
+
         return best;
+    }
+
+    /// <summary>
+    /// 优化版本：重用现有数组来减少内存分配
+    /// </summary>
+    /// <param name="result">要转换的拍数</param>
+    /// <param name="targetArray">目标数组，长度至少为3</param>
+    /// <param name="maxA2">最大分母</param>
+    /// <param name="epsilon">精度</param>
+    public static void RestoreArrayTo(double result, int[] targetArray, int maxA2 = 10000, double epsilon = 1e-6)
+    {
+        if (targetArray.Length < 3)
+            throw new ArgumentException("Target array must have at least 3 elements");
+
+        int minSum = int.MaxValue;
+        bool found = false;
+
+        // 枚举 array[2]，即分母，从小到大（更可能找到"最简"的组合）
+        for (int a2 = 1; a2 <= maxA2; a2++)
+        {
+            // a1 = (result - a0) * a2 -> 推导成：a1 = result * a2 - a0 * a2
+            double a1Raw = result * a2;
+            int a1 = (int)Math.Round(a1Raw);
+
+            // 推回 a0
+            double a0Raw = (a1Raw - a1) == 0 ? result - ((double)a1 / a2) : -1;
+            if (a0Raw < 0 || a0Raw % 1 != 0) continue;
+
+            int a0 = (int)Math.Round(a0Raw);
+            if (a0 < 0 || a0 > result) continue;
+
+            if (Math.Abs((a1 / (double)a2) + a0 - result) < epsilon)
+            {
+                int sum = a0 + a1 + a2;
+                if (sum < minSum)
+                {
+                    minSum = sum;
+                    targetArray[0] = a0;
+                    targetArray[1] = a1;
+                    targetArray[2] = a2;
+                    found = true;
+                    if (sum == result + 1) break; // 已经最简（例如 result=351 → [351,0,1]）
+                }
+            }
+        }
+
+        if (!found)
+        {
+            targetArray[0] = 0;
+            targetArray[1] = 0;
+            targetArray[2] = 1;
+        }
     }
 }
