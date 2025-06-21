@@ -247,39 +247,53 @@ public static class Converters
             {
                 L10n.Print("RePhiEditFeatureWarn",L10n.GetString("NestedParentChildLine"));
                 L10n.Print("RePhiEditFeatureWarn",L10n.GetString("Multilayer"));
+                
                 // 求所有事件层级中，最后一个事件的结束时间
                 // Get the end time of the last event in all event layers
                 float maxBeat = judgeline.EventLayers.LastEventEndBeat();
 
+                // 预分配列表容量以减少重新分配
+                var alphaEvents = new List<PhiFansObject.EventItem>();
+                var rotateEvents = new List<PhiFansObject.EventItem>();
+                var positionXEvents = new List<PhiFansObject.EventItem>();
+                var positionYEvents = new List<PhiFansObject.EventItem>();
+
+                // 减少对象创建的临时变量
+                var eventFrame = new PhiFansObject.EventItem();
+                var beatArray = new int[3];
+
                 // 逐拍遍历
                 for (float beat = 0; beat < maxBeat; beat += Precision)
                 {
+                    // Alpha events
                     if (judgeline.EventLayers.HasAlphaEventAtBeat(beat))
                     {
+                        BeatConverter.RestoreArrayTo(beat, beatArray);
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            Beat = BeatConverter.RestoreArray(beat),
+                            Beat = (int[])beatArray.Clone(),
                             Value = judgeline.EventLayers.GetAlphaAtBeat(beat),
                             Continuous = judgeline.EventLayers.HasAlphaEventAtBeat(beat - Precision),
                             Easing = 0
                         };
-                        lineItem.Props.Alpha.Add(phiEventFrame);
+                        alphaEvents.Add(phiEventFrame);
                     }
 
-                    // Rotate
+                    // Rotate events
                     if (judgeline.EventLayers.HasAngleEventAtBeat(beat))
                     {
+                        BeatConverter.RestoreArrayTo(beat, beatArray);
                         var phiEventFrame = new PhiFansObject.EventItem
                         {
-                            Beat = BeatConverter.RestoreArray(beat),
+                            Beat = (int[])beatArray.Clone(),
                             Value = judgeline.EventLayers.GetAngleAtBeat(beat),
                             Continuous = judgeline.EventLayers.HasAngleEventAtBeat(beat - Precision),
                             Easing = 0
                         };
-                        lineItem.Props.Rotate.Add(phiEventFrame);
+                        rotateEvents.Add(phiEventFrame);
                     }
 
-                    // X & Y
+                    // X & Y events
                     var lineIndex = chart.JudgeLineList.IndexOf(judgeline);
                     var hasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat);
                     var lastHasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat - Precision);
@@ -291,10 +305,13 @@ public static class Converters
                         // 调用GetLinePosition方法获取判定线的位置，返回x, y
                         // Call the GetLinePosition method to get the position of the judge line, returning x, y
                         var position = chart.JudgeLineList.GetLinePosition(lineIndex, beat);
+                        
+                        BeatConverter.RestoreArrayTo(beat, beatArray);
+                        
                         // X
                         var phiEventFrameX = new PhiFansObject.EventItem
                         {
-                            Beat = BeatConverter.RestoreArray(beat),
+                            Beat = (int[])beatArray.Clone(),
                             Value = RePhiEdit.TransformX(position.Item1),
                             Continuous = lastHasEvent,
                             Easing = 0
@@ -302,221 +319,234 @@ public static class Converters
                         // Y
                         var phiEventFrameY = new PhiFansObject.EventItem
                         {
-                            Beat = BeatConverter.RestoreArray(beat),
+                            Beat = (int[])beatArray.Clone(),
                             Value = RePhiEdit.TransformY(position.Item2),
                             Continuous = lastHasEvent,
                             Easing = 0
                         };
-                        lineItem.Props.PositionX.Add(phiEventFrameX);
-                        lineItem.Props.PositionY.Add(phiEventFrameY);
+                        positionXEvents.Add(phiEventFrameX);
+                        positionYEvents.Add(phiEventFrameY);
                     }
                 }
 
-                // Speed
+                // 批量添加事件
+                lineItem.Props.Alpha.AddRange(alphaEvents);
+                lineItem.Props.Rotate.AddRange(rotateEvents);
+                lineItem.Props.PositionX.AddRange(positionXEvents);
+                lineItem.Props.PositionY.AddRange(positionYEvents);
+
+                // Speed events处理
+                var speedEvents = new List<PhiFansObject.EventItem>();
                 foreach (var eventItem in judgeline.EventLayers[0].SpeedEvents)
                 {
                     if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        speedEvents.Add(new PhiFansObject.EventItem
                         {
                             Beat = eventItem.StartTime,
                             Value = eventItem.Start / SpeedRatio,
                             Continuous = false,
                             Easing = 0
-                        };
-                        lineItem.Props.Speed.Add(phiEventFrame);
+                        });
                         continue;
                     }
 
-                    var phiEventStart = new PhiFansObject.EventItem
+                    speedEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.StartTime,
                         Value = eventItem.Start / SpeedRatio,
                         Continuous = false,
                         Easing = 0
-                    };
-                    var phiEventEnd = new PhiFansObject.EventItem
+                    });
+                    speedEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.EndTime,
                         Value = eventItem.End / SpeedRatio,
                         Continuous = true,
                         Easing = 0
-                    };
-                    lineItem.Props.Speed.Add(phiEventStart);
-                    lineItem.Props.Speed.Add(phiEventEnd);
+                    });
                 }
+                lineItem.Props.Speed.AddRange(speedEvents);
 
                 phiFansChart.Lines.Add(lineItem);
+                
+                // 清理缓存以释放内存
+                chart.JudgeLineList.ClearCache();
+                judgeline.EventLayers.ClearCache();
                 continue;
             }
 
+            // 处理简单事件层，优化对象创建
+            var simpleAlphaEvents = new List<PhiFansObject.EventItem>();
+            var simpleMoveXEvents = new List<PhiFansObject.EventItem>();
+            var simpleMoveYEvents = new List<PhiFansObject.EventItem>();
+            var simpleRotateEvents = new List<PhiFansObject.EventItem>();
+            var simpleSpeedEvents = new List<PhiFansObject.EventItem>();
+
             foreach (var layer in judgeline.EventLayers)
             {
+                // Alpha events
                 foreach (var eventItem in layer.AlphaEvents)
                 {
                     if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        simpleAlphaEvents.Add(new PhiFansObject.EventItem
                         {
                             Beat = eventItem.StartTime,
                             Value = eventItem.Start,
                             Continuous = false,
                             Easing = 0
-                        };
-                        lineItem.Props.Alpha.Add(phiEventFrame);
+                        });
                         continue;
                     }
 
-                    var phiEventStart = new PhiFansObject.EventItem
+                    simpleAlphaEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.StartTime,
                         Value = eventItem.Start,
                         Continuous = false,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    var phiEventEnd = new PhiFansObject.EventItem
+                    });
+                    simpleAlphaEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.EndTime,
                         Value = eventItem.End,
                         Continuous = true,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    lineItem.Props.Alpha.Add(phiEventStart);
-                    lineItem.Props.Alpha.Add(phiEventEnd);
+                    });
                 }
 
+                // MoveX events
                 foreach (var eventItem in layer.MoveXEvents)
                 {
                     if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        simpleMoveXEvents.Add(new PhiFansObject.EventItem
                         {
                             Beat = eventItem.StartTime,
                             Value = RePhiEdit.TransformX(eventItem.Start),
                             Continuous = false,
                             Easing = 0
-                        };
-                        lineItem.Props.PositionX.Add(phiEventFrame);
+                        });
                         continue;
                     }
 
-                    var phiEventStart = new PhiFansObject.EventItem
+                    simpleMoveXEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.StartTime,
                         Value = RePhiEdit.TransformX(eventItem.Start),
                         Continuous = false,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    var phiEventEnd = new PhiFansObject.EventItem
+                    });
+                    simpleMoveXEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.EndTime,
                         Value = RePhiEdit.TransformX(eventItem.End),
                         Continuous = true,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    lineItem.Props.PositionX.Add(phiEventStart);
-                    lineItem.Props.PositionX.Add(phiEventEnd);
+                    });
                 }
 
+                // MoveY events
                 foreach (var eventItem in layer.MoveYEvents)
                 {
                     if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        simpleMoveYEvents.Add(new PhiFansObject.EventItem
                         {
                             Beat = eventItem.StartTime,
                             Value = RePhiEdit.TransformY(eventItem.Start),
                             Continuous = false,
                             Easing = 0
-                        };
-                        lineItem.Props.PositionY.Add(phiEventFrame);
+                        });
                         continue;
                     }
 
-                    var phiEventStart = new PhiFansObject.EventItem
+                    simpleMoveYEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.StartTime,
                         Value = RePhiEdit.TransformY(eventItem.Start),
                         Continuous = false,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    var phiEventEnd = new PhiFansObject.EventItem
+                    });
+                    simpleMoveYEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.EndTime,
                         Value = RePhiEdit.TransformY(eventItem.End),
                         Continuous = true,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    lineItem.Props.PositionY.Add(phiEventStart);
-                    lineItem.Props.PositionY.Add(phiEventEnd);
+                    });
                 }
 
+                // Rotate events
                 foreach (var eventItem in layer.RotateEvents)
                 {
                     if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        simpleRotateEvents.Add(new PhiFansObject.EventItem
                         {
                             Beat = eventItem.StartTime,
                             Value = eventItem.Start,
                             Continuous = false,
                             Easing = 0
-                        };
-                        lineItem.Props.Rotate.Add(phiEventFrame);
+                        });
                         continue;
                     }
 
-                    var phiEventStart = new PhiFansObject.EventItem
+                    simpleRotateEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.StartTime,
                         Value = eventItem.Start,
                         Continuous = false,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    var phiEventEnd = new PhiFansObject.EventItem
+                    });
+                    simpleRotateEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.EndTime,
                         Value = eventItem.End,
                         Continuous = true,
                         Easing = PhiFans.EasingNumber(eventItem.EasingType)
-                    };
-                    lineItem.Props.Rotate.Add(phiEventStart);
-                    lineItem.Props.Rotate.Add(phiEventEnd);
+                    });
                 }
 
+                // Speed events
                 foreach (var eventItem in layer.SpeedEvents)
                 {
                     if (Math.Abs(eventItem.Start - eventItem.End) < float.Epsilon)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        simpleSpeedEvents.Add(new PhiFansObject.EventItem
                         {
                             Beat = eventItem.StartTime,
                             Value = eventItem.Start / SpeedRatio,
                             Continuous = false,
                             Easing = 0
-                        };
-                        lineItem.Props.Speed.Add(phiEventFrame);
+                        });
                         continue;
                     }
 
-                    var phiEventStart = new PhiFansObject.EventItem
+                    simpleSpeedEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.StartTime,
                         Value = eventItem.Start / SpeedRatio,
                         Continuous = false,
                         Easing = 0
-                    };
-                    var phiEventEnd = new PhiFansObject.EventItem
+                    });
+                    simpleSpeedEvents.Add(new PhiFansObject.EventItem
                     {
                         Beat = eventItem.EndTime,
                         Value = eventItem.End / SpeedRatio,
                         Continuous = true,
                         Easing = 0
-                    };
-                    lineItem.Props.Speed.Add(phiEventStart);
-                    lineItem.Props.Speed.Add(phiEventEnd);
+                    });
                 }
             }
+
+            // 批量添加事件
+            lineItem.Props.Alpha.AddRange(simpleAlphaEvents);
+            lineItem.Props.PositionX.AddRange(simpleMoveXEvents);
+            lineItem.Props.PositionY.AddRange(simpleMoveYEvents);
+            lineItem.Props.Rotate.AddRange(simpleRotateEvents);
+            lineItem.Props.Speed.AddRange(simpleSpeedEvents);
 
             phiFansChart.Lines.Add(lineItem);
         }
