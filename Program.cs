@@ -2,7 +2,7 @@
 using PhiFansConverter;
 using System.IO.Compression;
 
-Console.WriteLine("PhiFans Converter v1.0.6");
+Console.WriteLine("PhiFans Converter v1.0.7");
 
 // Check for benchmark argument
 if (args.Length > 0 && args[0].ToLower() == "--benchmark")
