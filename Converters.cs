@@ -287,70 +287,89 @@ public static class Converters
 
                 // Pre-allocate event lists based on expected size
                 int estimatedEventCount = (int)Math.Ceiling(maxBeat / Precision);
-                lineItem.Props.Alpha = new List<PhiFansObject.EventItem>(estimatedEventCount / 4);
-                lineItem.Props.Rotate = new List<PhiFansObject.EventItem>(estimatedEventCount / 4);
-                lineItem.Props.PositionX = new List<PhiFansObject.EventItem>(estimatedEventCount / 2);
-                lineItem.Props.PositionY = new List<PhiFansObject.EventItem>(estimatedEventCount / 2);
-
-                // 逐拍遍历
-                for (float beat = 0; beat < maxBeat; beat += Precision)
+                
+                // Use object pools for temporary lists to reduce allocations
+                var tempAlphaEvents = ObjectPools.PhiFansEventItemListPool.Rent();
+                var tempRotateEvents = ObjectPools.PhiFansEventItemListPool.Rent();
+                var tempPositionXEvents = ObjectPools.PhiFansEventItemListPool.Rent();
+                var tempPositionYEvents = ObjectPools.PhiFansEventItemListPool.Rent();
+                
+                try
                 {
-                    if (judgeline.EventLayers.HasAlphaEventAtBeat(beat))
+                    // 逐拍遍历
+                    for (float beat = 0; beat < maxBeat; beat += Precision)
                     {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        if (judgeline.EventLayers.HasAlphaEventAtBeat(beat))
                         {
-                            Beat = BeatConverter.RestoreArray(beat),
-                            Value = judgeline.EventLayers.GetAlphaAtBeat(beat),
-                            Continuous = judgeline.EventLayers.HasAlphaEventAtBeat(beat - Precision),
-                            Easing = 0
-                        };
-                        lineItem.Props.Alpha.Add(phiEventFrame);
-                    }
+                            var phiEventFrame = new PhiFansObject.EventItem
+                            {
+                                Beat = BeatConverter.RestoreArray(beat),
+                                Value = judgeline.EventLayers.GetAlphaAtBeat(beat),
+                                Continuous = judgeline.EventLayers.HasAlphaEventAtBeat(beat - Precision),
+                                Easing = 0
+                            };
+                            tempAlphaEvents.Add(phiEventFrame);
+                        }
 
-                    // Rotate
-                    if (judgeline.EventLayers.HasAngleEventAtBeat(beat))
-                    {
-                        var phiEventFrame = new PhiFansObject.EventItem
+                        // Rotate
+                        if (judgeline.EventLayers.HasAngleEventAtBeat(beat))
                         {
-                            Beat = BeatConverter.RestoreArray(beat),
-                            Value = judgeline.EventLayers.GetAngleAtBeat(beat),
-                            Continuous = judgeline.EventLayers.HasAngleEventAtBeat(beat - Precision),
-                            Easing = 0
-                        };
-                        lineItem.Props.Rotate.Add(phiEventFrame);
-                    }
+                            var phiEventFrame = new PhiFansObject.EventItem
+                            {
+                                Beat = BeatConverter.RestoreArray(beat),
+                                Value = judgeline.EventLayers.GetAngleAtBeat(beat),
+                                Continuous = judgeline.EventLayers.HasAngleEventAtBeat(beat - Precision),
+                                Easing = 0
+                            };
+                            tempRotateEvents.Add(phiEventFrame);
+                        }
 
-                    // X & Y
-                    var lineIndex = chart.JudgeLineList.IndexOf(judgeline);
-                    var hasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat);
-                    var lastHasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat - Precision);
-                    if (hasEvent)
-                    {
-                        // 获取这个判定线在判定线列表的索引
-                        // Get the index of this judge line in the judge line list
+                        // X & Y
+                        var lineIndex = chart.JudgeLineList.IndexOf(judgeline);
+                        var hasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat);
+                        var lastHasEvent = chart.JudgeLineList.FatherAndTheLineHasXyEvent(lineIndex, beat - Precision);
+                        if (hasEvent)
+                        {
+                            // 获取这个判定线在判定线列表的索引
+                            // Get the index of this judge line in the judge line list
 
-                        // 调用GetLinePosition方法获取判定线的位置，返回x, y
-                        // Call the GetLinePosition method to get the position of the judge line, returning x, y
-                        var position = chart.JudgeLineList.GetLinePosition(lineIndex, beat);
-                        // X
-                        var phiEventFrameX = new PhiFansObject.EventItem
-                        {
-                            Beat = BeatConverter.RestoreArray(beat),
-                            Value = RePhiEdit.TransformX(position.Item1),
-                            Continuous = lastHasEvent,
-                            Easing = 0
-                        };
-                        // Y
-                        var phiEventFrameY = new PhiFansObject.EventItem
-                        {
-                            Beat = BeatConverter.RestoreArray(beat),
-                            Value = RePhiEdit.TransformY(position.Item2),
-                            Continuous = lastHasEvent,
-                            Easing = 0
-                        };
-                        lineItem.Props.PositionX.Add(phiEventFrameX);
-                        lineItem.Props.PositionY.Add(phiEventFrameY);
+                            // 调用GetLinePosition方法获取判定线的位置，返回x, y
+                            // Call the GetLinePosition method to get the position of the judge line, returning x, y
+                            var position = chart.JudgeLineList.GetLinePosition(lineIndex, beat);
+                            // X
+                            var phiEventFrameX = new PhiFansObject.EventItem
+                            {
+                                Beat = BeatConverter.RestoreArray(beat),
+                                Value = RePhiEdit.TransformX(position.Item1),
+                                Continuous = lastHasEvent,
+                                Easing = 0
+                            };
+                            // Y
+                            var phiEventFrameY = new PhiFansObject.EventItem
+                            {
+                                Beat = BeatConverter.RestoreArray(beat),
+                                Value = RePhiEdit.TransformY(position.Item2),
+                                Continuous = lastHasEvent,
+                                Easing = 0
+                            };
+                            tempPositionXEvents.Add(phiEventFrameX);
+                            tempPositionYEvents.Add(phiEventFrameY);
+                        }
                     }
+                    
+                    // Copy to final lists
+                    lineItem.Props.Alpha = new List<PhiFansObject.EventItem>(tempAlphaEvents);
+                    lineItem.Props.Rotate = new List<PhiFansObject.EventItem>(tempRotateEvents);
+                    lineItem.Props.PositionX = new List<PhiFansObject.EventItem>(tempPositionXEvents);
+                    lineItem.Props.PositionY = new List<PhiFansObject.EventItem>(tempPositionYEvents);
+                }
+                finally
+                {
+                    // Return objects to pool
+                    ObjectPools.PhiFansEventItemListPool.Return(tempAlphaEvents);
+                    ObjectPools.PhiFansEventItemListPool.Return(tempRotateEvents);
+                    ObjectPools.PhiFansEventItemListPool.Return(tempPositionXEvents);
+                    ObjectPools.PhiFansEventItemListPool.Return(tempPositionYEvents);
                 }
 
                 // Speed - pre-allocate based on actual events
