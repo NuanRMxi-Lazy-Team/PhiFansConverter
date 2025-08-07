@@ -215,6 +215,60 @@ public static partial class RePhiEditObject
     /// </summary>
     public class EventLayers : List<EventLayer>
     {
+        // Cache for frequently accessed values
+        private readonly Dictionary<float, float> _xAtBeatCache = new();
+        private readonly Dictionary<float, float> _yAtBeatCache = new();
+        private readonly Dictionary<float, float> _angleAtBeatCache = new();
+        private readonly Dictionary<float, float> _alphaAtBeatCache = new();
+        private readonly Dictionary<float, bool> _hasXEventCache = new();
+        private readonly Dictionary<float, bool> _hasYEventCache = new();
+        private readonly Dictionary<float, bool> _hasAngleEventCache = new();
+        private readonly Dictionary<float, bool> _hasAlphaEventCache = new();
+
+        // Cache invalidation when collection is modified
+        public new void Add(EventLayer item)
+        {
+            base.Add(item);
+            InvalidateCache();
+        }
+
+        public new void Insert(int index, EventLayer item)
+        {
+            base.Insert(index, item);
+            InvalidateCache();
+        }
+
+        public new bool Remove(EventLayer item)
+        {
+            var result = base.Remove(item);
+            if (result) InvalidateCache();
+            return result;
+        }
+
+        public new void RemoveAt(int index)
+        {
+            base.RemoveAt(index);
+            InvalidateCache();
+        }
+
+        public new void Clear()
+        {
+            base.Clear();
+            InvalidateCache();
+        }
+
+        private void InvalidateCache()
+        {
+            _xAtBeatCache.Clear();
+            _yAtBeatCache.Clear();
+            _angleAtBeatCache.Clear();
+            _alphaAtBeatCache.Clear();
+            _hasXEventCache.Clear();
+            _hasYEventCache.Clear();
+            _hasAngleEventCache.Clear();
+            _hasAlphaEventCache.Clear();
+        }
+
         public float LastEventEndBeat()
         {
             // 求下面所有事件种类的最后一个事件的结束拍，返回最大值
@@ -225,41 +279,113 @@ public static partial class RePhiEditObject
             return Math.Max(x, Math.Max(y, Math.Max(angle, alpha)));
         }
 
-        public float GetXAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.MoveXEvents.GetValueAtBeat(t));
+        public float GetXAtBeat(float t)
+        {
+            if (_xAtBeatCache.TryGetValue(t, out float cachedValue))
+            {
+                return cachedValue;
+            }
 
-        public bool HasXEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.MoveXEvents.HasEventAtBeat(beat));
+            float result = this.Sum(eventLayer => eventLayer.MoveXEvents.GetValueAtBeat(t));
+            _xAtBeatCache[t] = result;
+            return result;
+        }
+
+        public bool HasXEventAtBeat(float beat)
+        {
+            if (_hasXEventCache.TryGetValue(beat, out bool cachedResult))
+            {
+                return cachedResult;
+            }
+
+            bool result = this.Any(eventLayer => eventLayer.MoveXEvents.HasEventAtBeat(beat));
+            _hasXEventCache[beat] = result;
+            return result;
+        }
 
         public float LastXEventEndBeat =>
-            this.Max(eventLayer => eventLayer.MoveXEvents.LastEventEndBeat());
+            this.Count > 0 ? this.Max(eventLayer => eventLayer.MoveXEvents.LastEventEndBeat()) : 0;
 
-        public float GetYAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.MoveYEvents.GetValueAtBeat(t));
+        public float GetYAtBeat(float t)
+        {
+            if (_yAtBeatCache.TryGetValue(t, out float cachedValue))
+            {
+                return cachedValue;
+            }
 
-        public bool HasYEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.MoveYEvents.HasEventAtBeat(beat));
+            float result = this.Sum(eventLayer => eventLayer.MoveYEvents.GetValueAtBeat(t));
+            _yAtBeatCache[t] = result;
+            return result;
+        }
+
+        public bool HasYEventAtBeat(float beat)
+        {
+            if (_hasYEventCache.TryGetValue(beat, out bool cachedResult))
+            {
+                return cachedResult;
+            }
+
+            bool result = this.Any(eventLayer => eventLayer.MoveYEvents.HasEventAtBeat(beat));
+            _hasYEventCache[beat] = result;
+            return result;
+        }
 
         public float LastYEventEndBeat =>
-            this.Max(eventLayer => eventLayer.MoveYEvents.LastEventEndBeat());
+            this.Count > 0 ? this.Max(eventLayer => eventLayer.MoveYEvents.LastEventEndBeat()) : 0;
 
-        public float GetAngleAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.RotateEvents.GetValueAtBeat(t));
+        public float GetAngleAtBeat(float t)
+        {
+            if (_angleAtBeatCache.TryGetValue(t, out float cachedValue))
+            {
+                return cachedValue;
+            }
 
-        public bool HasAngleEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.RotateEvents.HasEventAtBeat(beat));
+            float result = this.Sum(eventLayer => eventLayer.RotateEvents.GetValueAtBeat(t));
+            _angleAtBeatCache[t] = result;
+            return result;
+        }
+
+        public bool HasAngleEventAtBeat(float beat)
+        {
+            if (_hasAngleEventCache.TryGetValue(beat, out bool cachedResult))
+            {
+                return cachedResult;
+            }
+
+            bool result = this.Any(eventLayer => eventLayer.RotateEvents.HasEventAtBeat(beat));
+            _hasAngleEventCache[beat] = result;
+            return result;
+        }
 
         public float LastAngleEventEndBeat =>
-            this.Max(eventLayer => eventLayer.RotateEvents.LastEventEndBeat());
+            this.Count > 0 ? this.Max(eventLayer => eventLayer.RotateEvents.LastEventEndBeat()) : 0;
 
-        public float GetAlphaAtBeat(float t) =>
-            this.Sum(eventLayer => eventLayer.AlphaEvents.GetValueAtBeat(t));
+        public float GetAlphaAtBeat(float t)
+        {
+            if (_alphaAtBeatCache.TryGetValue(t, out float cachedValue))
+            {
+                return cachedValue;
+            }
 
-        public bool HasAlphaEventAtBeat(float beat) =>
-            this.Any(eventLayer => eventLayer.AlphaEvents.HasEventAtBeat(beat));
+            float result = this.Sum(eventLayer => eventLayer.AlphaEvents.GetValueAtBeat(t));
+            _alphaAtBeatCache[t] = result;
+            return result;
+        }
+
+        public bool HasAlphaEventAtBeat(float beat)
+        {
+            if (_hasAlphaEventCache.TryGetValue(beat, out bool cachedResult))
+            {
+                return cachedResult;
+            }
+
+            bool result = this.Any(eventLayer => eventLayer.AlphaEvents.HasEventAtBeat(beat));
+            _hasAlphaEventCache[beat] = result;
+            return result;
+        }
 
         public float LastAlphaEventEndBeat =>
-            this.Max(eventLayer => eventLayer.AlphaEvents.LastEventEndBeat());
+            this.Count > 0 ? this.Max(eventLayer => eventLayer.AlphaEvents.LastEventEndBeat()) : 0;
     }
 
 

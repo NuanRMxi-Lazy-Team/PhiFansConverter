@@ -3,11 +3,30 @@ using PhiFansConverter;
 using System.IO.Compression;
 
 Console.WriteLine("PhiFans Converter v1.0.6");
+
+// Check for benchmark argument
+if (args.Length > 0 && args[0].ToLower() == "--benchmark")
+{
+    PerformanceBenchmark.RunBenchmarks();
+    return;
+}
+
 Console.WriteLine("Please Choose a Language");// 选择语言英文
 Console.WriteLine("Language: 1. English (US) (Default) 2. 简体中文 （中国大陆） 3. 日本語 （日本國） 4. 繁體中文 5. ???");
+Console.WriteLine("Or type 'benchmark' to run performance tests");
 string langNumStr = Console.ReadLine()!;
+
 if (string.IsNullOrEmpty(langNumStr))
     langNumStr = "1";
+
+// Check if user wants to run benchmark
+if (langNumStr.ToLower().Contains("benchmark"))
+{
+    PerformanceBenchmark.RunBenchmarks();
+    Console.WriteLine("\nPress Enter to continue to converter...");
+    Console.ReadLine();
+}
+
 try
 {
     _ = int.Parse(langNumStr);
