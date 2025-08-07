@@ -1,14 +1,17 @@
-﻿namespace PhiFansConverter;
+﻿using System.Collections.Concurrent;
+
+namespace PhiFansConverter;
 
 public static class Easing
 {
-    // Cache for easing function results to improve performance
-    private static readonly Dictionary<(int easingType, double start, double end, double t), double> _easingCache = 
-        new Dictionary<(int, double, double, double), double>();
-    
+    // Cache for easing function results to improve performance - 使用ConcurrentDictionary以支持线程安全
+    private static readonly ConcurrentDictionary<(int easingType, double start, double end, double t), double> _easingCache = 
+        new ConcurrentDictionary<(int, double, double, double), double>();
+
     // LRU cache implementation for easing results
     private const int MaxCacheSize = 10000;
     private static readonly LinkedList<(int easingType, double start, double end, double t)> _lruList = new();
+    private static readonly object _lruLock = new object(); // 添加锁对象保护LRU操作
     
     // Delegate for easing functions
     private delegate double EasingFunction(double t);
@@ -194,15 +197,18 @@ public static class Easing
     {
         var cacheKey = (easingType, start, end, t);
         
-        // Check cache first
+        // Check cache first - ConcurrentDictionary是线程安全的
         if (_easingCache.TryGetValue(cacheKey, out double cachedResult))
         {
-            // Move to front of LRU list
-            var node = _lruList.Find(cacheKey);
-            if (node != null)
+            // Move to front of LRU list - 使用锁保护LinkedList操作
+            lock (_lruLock)
             {
-                _lruList.Remove(node);
-                _lruList.AddFirst(node);
+                var node = _lruList.Find(cacheKey);
+                if (node != null)
+                {
+                    _lruList.Remove(node);
+                    _lruList.AddFirst(node);
+                }
             }
             return cachedResult;
         }
@@ -251,23 +257,30 @@ public static class Easing
 
     private static void AddToCache((int easingType, double start, double end, double t) key, double value)
     {
-        // Remove oldest items if cache is full
-        while (_easingCache.Count >= MaxCacheSize && _lruList.Count > 0)
+        // 使用锁保护整个LRU缓存操作
+        lock (_lruLock)
         {
-            var oldestKey = _lruList.Last!.Value;
-            _easingCache.Remove(oldestKey);
-            _lruList.RemoveLast();
-        }
+            // Remove oldest items if cache is full
+            while (_easingCache.Count >= MaxCacheSize && _lruList.Count > 0)
+            {
+                var oldestKey = _lruList.Last!.Value;
+                _easingCache.TryRemove(oldestKey, out _); // 使用TryRemove替代Remove
+                _lruList.RemoveLast();
+            }
 
-        // Add new item
-        _easingCache[key] = value;
-        _lruList.AddFirst(key);
+            // Add new item - 使用线程安全的方法添加
+            _easingCache.TryAdd(key, value); // 使用TryAdd替代直接赋值
+            _lruList.AddFirst(key);
+        }
     }
 
     // Method to clear cache if needed
     public static void ClearCache()
     {
-        _easingCache.Clear();
-        _lruList.Clear();
+        lock (_lruLock)
+        {
+            _easingCache.Clear();
+            _lruList.Clear();
+        }
     }
 }

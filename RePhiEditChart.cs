@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Concurrent;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace PhiFansConverter;
@@ -216,14 +217,14 @@ public static partial class RePhiEditObject
     public class EventLayers : List<EventLayer>
     {
         // Cache for frequently accessed values
-        private readonly Dictionary<float, float> _xAtBeatCache = new();
-        private readonly Dictionary<float, float> _yAtBeatCache = new();
-        private readonly Dictionary<float, float> _angleAtBeatCache = new();
-        private readonly Dictionary<float, float> _alphaAtBeatCache = new();
-        private readonly Dictionary<float, bool> _hasXEventCache = new();
-        private readonly Dictionary<float, bool> _hasYEventCache = new();
-        private readonly Dictionary<float, bool> _hasAngleEventCache = new();
-        private readonly Dictionary<float, bool> _hasAlphaEventCache = new();
+        private readonly ConcurrentDictionary<float, float> _xAtBeatCache = new();
+        private readonly ConcurrentDictionary<float, float> _yAtBeatCache = new();
+        private readonly ConcurrentDictionary<float, float> _angleAtBeatCache = new();
+        private readonly ConcurrentDictionary<float, float> _alphaAtBeatCache = new();
+        private readonly ConcurrentDictionary<float, bool> _hasXEventCache = new();
+        private readonly ConcurrentDictionary<float, bool> _hasYEventCache = new();
+        private readonly ConcurrentDictionary<float, bool> _hasAngleEventCache = new();
+        private readonly ConcurrentDictionary<float, bool> _hasAlphaEventCache = new();
 
         // Cache invalidation when collection is modified
         public new void Add(EventLayer item)
@@ -443,7 +444,7 @@ public static partial class RePhiEditObject
         [JsonProperty("isFake")] public int IsFake; // 是否为假note（1为假note，0为真note）
         [JsonProperty("positionX")] public float PositionX; // X坐标
         [JsonProperty("size")] public float Size; // 宽度倍率
-        [JsonProperty("Speed")] public float SpeedMultiplier; // 速度倍率
+        [JsonProperty("speed")] public float SpeedMultiplier; // 速度倍率
         [JsonProperty("type")] public int Type; // 类型（1 为 Tap、2 为 Hold、3 为 Flick、4 为 Drag）
         [JsonProperty("visibleTime")] public float VisibleTime; // 可见时间（单位为秒）
         [JsonProperty("yOffset")] public float YOffset; // Y偏移

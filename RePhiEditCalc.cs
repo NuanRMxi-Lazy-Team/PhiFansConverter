@@ -1,12 +1,14 @@
-﻿namespace PhiFansConverter;
+﻿using System.Collections.Concurrent;
+
+namespace PhiFansConverter;
 
 public partial class RePhiEditObject
 {
     public class JudgeLineList : List<JudgeLine>
     {
-        // Cache for line positions to avoid recalculation
-        private readonly Dictionary<(int index, float beat), (float x, float y)> _positionCache = new();
-        private readonly Dictionary<(int index, float beat), bool> _hasEventCache = new();
+        // Cache for line positions to avoid recalculation - 使用ConcurrentDictionary以支持线程安全
+        private readonly ConcurrentDictionary<(int index, float beat), (float x, float y)> _positionCache = new();
+        private readonly ConcurrentDictionary<(int index, float beat), bool> _hasEventCache = new();
 
         public (float, float) GetLinePosition(int index, float beat)
         {
@@ -19,8 +21,8 @@ public partial class RePhiEditObject
 
             var result = GetLinePositionOptimized(index, beat);
             
-            // Cache the result
-            _positionCache[cacheKey] = result;
+            // Cache the result - 使用TryAdd替代直接赋值
+            _positionCache.TryAdd(cacheKey, result);
             return result;
         }
 
@@ -89,8 +91,8 @@ public partial class RePhiEditObject
 
             bool result = FatherAndTheLineHasXyEventOptimized(index, beat);
             
-            // Cache the result
-            _hasEventCache[cacheKey] = result;
+            // Cache the result - 使用TryAdd替代直接赋值
+            _hasEventCache.TryAdd(cacheKey, result);
             return result;
         }
 
@@ -174,10 +176,10 @@ public partial class RePhiEditObject
     public class EventList : List<Event>
     {
         // Cache for frequently accessed beat values to improve performance
-        private readonly Dictionary<float, float> _beatValueCache = new();
-        private readonly Dictionary<float, bool> _hasEventCache = new();
-        private float _lastEventEndBeatCache = -1;
-        private bool _isLastEventEndBeatCacheValid = false;
+        private readonly ConcurrentDictionary<float, float> _beatValueCache = new();
+        private readonly ConcurrentDictionary<float, bool> _hasEventCache = new();
+        private volatile float _lastEventEndBeatCache = -1;
+        private volatile bool _isLastEventEndBeatCacheValid = false;
 
         // Override Add/Insert/Remove methods to invalidate cache
         public new void Add(Event item)
@@ -228,8 +230,8 @@ public partial class RePhiEditObject
 
             float result = GetValueAtBeatOptimized(beat);
             
-            // Cache the result
-            _beatValueCache[beat] = result;
+            // Cache the result - 使用TryAdd替代直接赋值
+            _beatValueCache.TryAdd(beat, result);
             return result;
         }
 
@@ -290,8 +292,8 @@ public partial class RePhiEditObject
 
             bool result = HasEventAtBeatOptimized(beat);
             
-            // Cache the result
-            _hasEventCache[beat] = result;
+            // Cache the result - 使用TryAdd替代直接赋值
+            _hasEventCache.TryAdd(beat, result);
             return result;
         }
 

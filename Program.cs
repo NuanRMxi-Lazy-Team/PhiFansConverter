@@ -117,13 +117,14 @@ if (json.Contains("props"))
             L10n.Print("FileNotFound");
         }
     }
+
     File.WriteAllText("rpe.json", JsonConvert.SerializeObject(convertedRpeChart, Formatting.None));
     L10n.Print("SavedTo", Path.GetFullPath("rpe.json"));
 }
-if (rpeChart.Meta.Name is not null)
+else if (rpeChart.Meta.Name is not null)
 {
     // Is RePhiEdit file
-    var phiFansChart = Converters.RePhiEditConverter(rpeChart);
+    var phiFansChart = await Converters.RePhiEditConverter(rpeChart);
     File.WriteAllText("phifans.json", JsonConvert.SerializeObject(phiFansChart, Formatting.None));
     L10n.Print("SavedTo", Path.GetFullPath("phifans.json"));
 }
