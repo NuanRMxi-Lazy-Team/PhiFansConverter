@@ -2,6 +2,14 @@
 
 public static class Easing
 {
+    // Cache for easing function results to improve performance
+    private static readonly Dictionary<(int easingType, double start, double end, double t), double> _easingCache = 
+        new Dictionary<(int, double, double, double), double>();
+    
+    // LRU cache implementation for easing results
+    private const int MaxCacheSize = 10000;
+    private static readonly LinkedList<(int easingType, double start, double end, double t)> _lruList = new();
+    
     // Delegate for easing functions
     private delegate double EasingFunction(double t);
 
@@ -184,6 +192,22 @@ public static class Easing
     // Overload, using int to specify the corresponding EasingFunction
     public static double Evaluate(int easingType, double start, double end, double t)
     {
+        var cacheKey = (easingType, start, end, t);
+        
+        // Check cache first
+        if (_easingCache.TryGetValue(cacheKey, out double cachedResult))
+        {
+            // Move to front of LRU list
+            var node = _lruList.Find(cacheKey);
+            if (node != null)
+            {
+                _lruList.Remove(node);
+                _lruList.AddFirst(node);
+            }
+            return cachedResult;
+        }
+
+        // Calculate result
         EasingFunction function = easingType switch
         {
             1 => Linear,
@@ -216,6 +240,34 @@ public static class Easing
             28 => EaseInOutBounce,
             _ => Linear,
         };
-        return Evaluate(function, start, end, t);
+        
+        double result = Evaluate(function, start, end, t);
+        
+        // Add to cache with LRU management
+        AddToCache(cacheKey, result);
+        
+        return result;
+    }
+
+    private static void AddToCache((int easingType, double start, double end, double t) key, double value)
+    {
+        // Remove oldest items if cache is full
+        while (_easingCache.Count >= MaxCacheSize && _lruList.Count > 0)
+        {
+            var oldestKey = _lruList.Last!.Value;
+            _easingCache.Remove(oldestKey);
+            _lruList.RemoveLast();
+        }
+
+        // Add new item
+        _easingCache[key] = value;
+        _lruList.AddFirst(key);
+    }
+
+    // Method to clear cache if needed
+    public static void ClearCache()
+    {
+        _easingCache.Clear();
+        _lruList.Clear();
     }
 }
