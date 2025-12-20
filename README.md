@@ -1,3 +1,4 @@
+# 本项目已不再维护，请移步[PhiFanmadeTool](https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool)项目
 # PhiFansConverter
 PhiFans 转谱器  
 PhiFans Chart Converter
